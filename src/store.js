@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { format } from 'date-fns'
+import { SEED_TRANSACTIONS } from './lib/seedData'
 
 const today = () => format(new Date(), 'yyyy-MM-dd')
 
@@ -11,6 +12,40 @@ export const useStore = create(
       darkMode: true,
       currency: '€',
 
+      // ── Editable income sources ──────────────────────────────────────────────
+      incomeSources: ['Lumileds', 'Hexenhof', 'Tips', 'Other'],
+      addIncomeSource: (name) => set((s) => ({
+        incomeSources: s.incomeSources.includes(name) ? s.incomeSources : [...s.incomeSources, name],
+      })),
+      renameIncomeSource: (oldName, newName) => set((s) => ({
+        incomeSources: s.incomeSources.map((n) => n === oldName ? newName : n),
+        transactions: s.transactions.map((t) =>
+          t.type === 'income' && t.category === oldName ? { ...t, category: newName } : t
+        ),
+      })),
+      deleteIncomeSource: (name) => set((s) => ({
+        incomeSources: s.incomeSources.filter((n) => n !== name),
+      })),
+
+      // ── Editable expense categories ──────────────────────────────────────────
+      expenseCategories: [
+        'Rent', 'Insurance', 'Phone', 'Groceries', 'India Transfer',
+        'Transport', 'Entertainment', 'Mutual Funds', 'Health', 'Education', 'Bank Fees', 'Other',
+      ],
+      addExpenseCategory: (name) => set((s) => ({
+        expenseCategories: s.expenseCategories.includes(name) ? s.expenseCategories : [...s.expenseCategories, name],
+      })),
+      renameExpenseCategory: (oldName, newName) => set((s) => ({
+        expenseCategories: s.expenseCategories.map((n) => n === oldName ? newName : n),
+        transactions: s.transactions.map((t) =>
+          t.type === 'expense' && t.category === oldName ? { ...t, category: newName } : t
+        ),
+      })),
+      deleteExpenseCategory: (name) => set((s) => ({
+        expenseCategories: s.expenseCategories.filter((n) => n !== name),
+      })),
+
+      // ── Daily tasks ──────────────────────────────────────────────────────────
       dailyTasks: [],
       addDailyTask: (text) => set((s) => ({
         dailyTasks: [...s.dailyTasks, { id: crypto.randomUUID(), text, done: false, date: today() }],
@@ -22,6 +57,7 @@ export const useStore = create(
         dailyTasks: s.dailyTasks.filter((t) => t.id !== id),
       })),
 
+      // ── Kanban tasks ─────────────────────────────────────────────────────────
       tasks: [],
       addTask: (task) => set((s) => ({
         tasks: [...s.tasks, { id: crypto.randomUUID(), status: 'todo', ...task }],
@@ -36,8 +72,9 @@ export const useStore = create(
         tasks: s.tasks.map((t) => t.id === id ? { ...t, status } : t),
       })),
 
-      transactions: [],
-      budgets: { food: 200, transport: 80, shopping: 150, entertainment: 100, other: 100 },
+      // ── Finance ──────────────────────────────────────────────────────────────
+      transactions: SEED_TRANSACTIONS,
+      budgets: {},
       addTransaction: (tx) => set((s) => ({
         transactions: [...s.transactions, { id: crypto.randomUUID(), date: today(), ...tx }],
       })),
@@ -48,6 +85,7 @@ export const useStore = create(
         budgets: { ...s.budgets, [category]: amount },
       })),
 
+      // ── Her ──────────────────────────────────────────────────────────────────
       movies: [],
       addMovie: (item) => set((s) => ({
         movies: [...s.movies, { id: crypto.randomUUID(), watched: false, addedAt: today(), ...item }],
@@ -79,12 +117,15 @@ export const useStore = create(
       toggleDateIdea: (id) => set((s) => ({
         dateIdeas: s.dateIdeas.map((d) => d.id === id ? { ...d, done: !d.done } : d),
       })),
-      deleteDateIdea: (id) => set((s) => ({ dateIdeas: s.dateIdeas.filter((d) => d.id !== id) })),
+      deleteDateIdea: (id) => set((s) => ({
+        dateIdeas: s.dateIdeas.filter((d) => d.id !== id),
+      })),
 
+      // ── Profile ──────────────────────────────────────────────────────────────
       setName: (name) => set({ name }),
       toggleDarkMode: () => set((s) => ({ darkMode: !s.darkMode })),
       setCurrency: (currency) => set({ currency }),
     }),
-    { name: 'lifeos-v2' }
+    { name: 'lifeos-v3' }
   )
 )
