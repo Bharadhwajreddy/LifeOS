@@ -227,6 +227,6 @@ export const useStore = create(
       toggleDarkMode: () => set((s) => ({ darkMode: !s.darkMode })),
       setCurrency: (currency) => set({ currency }),
     }),
-    { name: 'lifeos-v3' }
+    { name: 'lifeos-v4' }
   )
 )

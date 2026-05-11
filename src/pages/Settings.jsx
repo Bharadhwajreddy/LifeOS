@@ -209,7 +209,7 @@ export default function Settings() {
           <p className="text-sm text-zinc-600 dark:text-zinc-400">
             This deletes everything — tasks, finance history, all of it. Your pre-loaded history will also be gone.
           </p>
-          <Btn variant="danger" size="lg" onClick={() => { localStorage.removeItem('lifeos-v3'); window.location.reload() }}>
+          <Btn variant="danger" size="lg" onClick={() => { localStorage.removeItem('lifeos-v4'); window.location.reload() }}>
             Yes, delete everything
           </Btn>
           <Btn variant="ghost" size="lg" onClick={() => setClearModal(false)}>Cancel</Btn>
