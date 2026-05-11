@@ -11,26 +11,28 @@ const tabs = [
 
 export default function BottomNav() {
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl border-t border-zinc-200 dark:border-zinc-800 safe-bottom">
-      <div className="flex max-w-md mx-auto">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white/90 dark:bg-zinc-950/90 backdrop-blur-2xl border-t border-zinc-200/60 dark:border-zinc-800/60 safe-bottom">
+      <div className="flex max-w-md mx-auto px-2">
         {tabs.map(({ to, icon: Icon, label }) => (
           <NavLink
             key={to}
             to={to}
             end={to === '/'}
-            className={({ isActive }) =>
-              `flex-1 flex flex-col items-center gap-1 py-2 text-xs transition-colors ${
-                isActive
-                  ? 'text-blue-500'
-                  : 'text-zinc-400 dark:text-zinc-500'
-              }`
-            }
+            className="flex-1"
           >
             {({ isActive }) => (
-              <>
-                <Icon size={22} strokeWidth={isActive ? 2.2 : 1.8} />
-                <span className="font-medium">{label}</span>
-              </>
+              <div className={`flex flex-col items-center gap-0.5 py-2 mx-0.5 rounded-xl transition-all ${
+                isActive ? 'text-blue-500' : 'text-zinc-400 dark:text-zinc-600'
+              }`}>
+                <div className={`relative p-1.5 rounded-xl transition-all ${
+                  isActive ? 'bg-blue-50 dark:bg-blue-500/10' : ''
+                }`}>
+                  <Icon size={20} strokeWidth={isActive ? 2.3 : 1.8} />
+                </div>
+                <span className={`text-[10px] font-semibold ${isActive ? 'text-blue-500' : 'text-zinc-400 dark:text-zinc-600'}`}>
+                  {label}
+                </span>
+              </div>
             )}
           </NavLink>
         ))}

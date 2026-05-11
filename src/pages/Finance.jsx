@@ -1,40 +1,47 @@
 import { useState, useRef, useEffect } from 'react'
-import { Plus, Trash2, TrendingUp, TrendingDown, ChevronDown } from 'lucide-react'
+import { Trash2, TrendingUp, TrendingDown, ChevronDown, Plus, Check } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { useStore } from '../store'
 import Modal from '../components/Modal'
-import { Card, Btn, Input, Select, SectionHeader, EmptyState } from '../components/UI'
+import { Card, Btn, Input, Select, SectionHeader, EmptyState, TabBar } from '../components/UI'
 
 const fmtMonth = (ym) => {
   const [y, m] = ym.split('-')
-  return format(new Date(+y, +m - 1, 1), 'MMM yyyy')
+  return format(new Date(+y, +m - 1, 1), 'MMM yy')
 }
 
 function useSortedMonths(transactions) {
   const current = format(new Date(), 'yyyy-MM')
   const fromTx = transactions.map((t) => t.date.slice(0, 7))
-  const unique = [...new Set([current, ...fromTx])].sort((a, b) => b.localeCompare(a))
-  return unique
+  return [...new Set([current, ...fromTx])].sort((a, b) => b.localeCompare(a))
 }
 
+// ─── Month Selector (scroll fix) ─────────────────────────────────────────────
 function MonthSelector({ value, onChange, months }) {
-  const scrollRef = useRef(null)
+  const ref = useRef(null)
 
-  useEffect(() => {
-    const active = scrollRef.current?.querySelector('[data-active]')
-    if (active) active.scrollIntoView({ inline: 'center', behavior: 'smooth', block: 'nearest' })
-  }, [value])
+  const scrollToActive = (smooth) => {
+    const container = ref.current
+    if (!container) return
+    const active = container.querySelector('[data-active]')
+    if (!active) return
+    const target = active.offsetLeft - container.offsetWidth / 2 + active.offsetWidth / 2
+    container.scrollTo({ left: Math.max(0, target), behavior: smooth ? 'smooth' : 'instant' })
+  }
+
+  useEffect(() => { requestAnimationFrame(() => scrollToActive(false)) }, [])
+  useEffect(() => { scrollToActive(true) }, [value])
 
   return (
-    <div ref={scrollRef} className="flex gap-2 overflow-x-auto scrollbar-hide py-1 -mx-4 px-4">
+    <div ref={ref} className="flex gap-2 overflow-x-auto scrollbar-hide py-1">
       {months.map((m) => (
         <button
           key={m}
           data-active={m === value ? '' : undefined}
           onClick={() => onChange(m)}
-          className={`shrink-0 px-3.5 py-1.5 rounded-full text-sm font-semibold transition-all ${
+          className={`shrink-0 px-4 py-1.5 rounded-full text-sm font-semibold transition-all ${
             m === value
-              ? 'bg-blue-500 text-white shadow-sm'
+              ? 'bg-blue-500 text-white shadow-sm shadow-blue-500/30'
               : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400'
           }`}
         >
@@ -45,43 +52,45 @@ function MonthSelector({ value, onChange, months }) {
   )
 }
 
-// ─── Overview tab ─────────────────────────────────────────────────────────────
+// ─── Overview ─────────────────────────────────────────────────────────────────
 function OverviewTab({ month, months, setMonth }) {
   const { transactions, budgets, currency, incomeSources, expenseCategories } = useStore()
 
-  const mTx = transactions.filter((t) => t.date.startsWith(month))
-  const income = mTx.filter((t) => t.type === 'income').reduce((s, t) => s + t.amount, 0)
+  const mTx      = transactions.filter((t) => t.date.startsWith(month))
+  const income   = mTx.filter((t) => t.type === 'income').reduce((s, t) => s + t.amount, 0)
   const expenses = mTx.filter((t) => t.type === 'expense').reduce((s, t) => s + t.amount, 0)
-  const saved = income - expenses
+  const saved    = income - expenses
 
-  const incomeBySource = incomeSources.map((src) => ({
-    src,
-    amount: mTx.filter((t) => t.type === 'income' && t.category === src).reduce((s, t) => s + t.amount, 0),
-  })).filter((x) => x.amount > 0)
+  const incomeBySource = incomeSources
+    .map((src) => ({ src, amount: mTx.filter((t) => t.type === 'income' && t.category === src).reduce((s, t) => s + t.amount, 0) }))
+    .filter((x) => x.amount > 0)
 
-  const expByCategory = expenseCategories.map((cat) => ({
-    cat,
-    amount: mTx.filter((t) => t.type === 'expense' && t.category === cat).reduce((s, t) => s + t.amount, 0),
-    budget: budgets[cat] || 0,
-  })).filter((x) => x.amount > 0).sort((a, b) => b.amount - a.amount)
+  const expByCategory = expenseCategories
+    .map((cat) => ({
+      cat,
+      amount: mTx.filter((t) => t.type === 'expense' && t.category === cat).reduce((s, t) => s + t.amount, 0),
+      budget: budgets[cat] || 0,
+    }))
+    .filter((x) => x.amount > 0)
+    .sort((a, b) => b.amount - a.amount)
 
   return (
     <div className="space-y-5">
       <MonthSelector value={month} onChange={setMonth} months={months} />
 
-      {/* Summary */}
+      {/* Summary strip */}
       <div className="grid grid-cols-3 gap-2">
-        <div className="bg-green-50 dark:bg-green-900/20 rounded-2xl p-3">
-          <p className="text-[10px] font-semibold text-green-600 dark:text-green-400 uppercase tracking-wide">Income</p>
-          <p className="text-xl font-bold text-green-700 dark:text-green-300 mt-0.5">{currency}{income.toFixed(0)}</p>
+        <div className="bg-emerald-500 rounded-2xl p-3.5 shadow-sm shadow-emerald-500/25">
+          <p className="text-[10px] font-bold text-emerald-100 uppercase tracking-wide">Income</p>
+          <p className="text-xl font-bold text-white mt-1 leading-none">{currency}{income.toFixed(0)}</p>
         </div>
-        <div className="bg-red-50 dark:bg-red-900/20 rounded-2xl p-3">
-          <p className="text-[10px] font-semibold text-red-600 dark:text-red-400 uppercase tracking-wide">Spent</p>
-          <p className="text-xl font-bold text-red-700 dark:text-red-300 mt-0.5">{currency}{expenses.toFixed(0)}</p>
+        <div className="bg-rose-500 rounded-2xl p-3.5 shadow-sm shadow-rose-500/25">
+          <p className="text-[10px] font-bold text-rose-100 uppercase tracking-wide">Spent</p>
+          <p className="text-xl font-bold text-white mt-1 leading-none">{currency}{expenses.toFixed(0)}</p>
         </div>
-        <div className={`rounded-2xl p-3 ${saved >= 0 ? 'bg-blue-50 dark:bg-blue-900/20' : 'bg-orange-50 dark:bg-orange-900/20'}`}>
-          <p className={`text-[10px] font-semibold uppercase tracking-wide ${saved >= 0 ? 'text-blue-600 dark:text-blue-400' : 'text-orange-600 dark:text-orange-400'}`}>Saved</p>
-          <p className={`text-xl font-bold mt-0.5 ${saved >= 0 ? 'text-blue-700 dark:text-blue-300' : 'text-orange-700 dark:text-orange-300'}`}>
+        <div className={`rounded-2xl p-3.5 shadow-sm ${saved >= 0 ? 'bg-blue-500 shadow-blue-500/25' : 'bg-amber-500 shadow-amber-500/25'}`}>
+          <p className={`text-[10px] font-bold uppercase tracking-wide ${saved >= 0 ? 'text-blue-100' : 'text-amber-100'}`}>Saved</p>
+          <p className="text-xl font-bold text-white mt-1 leading-none">
             {saved >= 0 ? '+' : ''}{currency}{saved.toFixed(0)}
           </p>
         </div>
@@ -89,44 +98,48 @@ function OverviewTab({ month, months, setMonth }) {
 
       {/* Income by source */}
       {incomeBySource.length > 0 && (
-        <div>
+        <>
           <SectionHeader>Income Sources</SectionHeader>
           <div className="grid grid-cols-2 gap-2">
             {incomeBySource.map(({ src, amount }) => (
-              <Card key={src} className="p-3">
-                <p className="text-xs text-zinc-400 font-medium">{src}</p>
-                <p className="text-lg font-bold text-zinc-800 dark:text-zinc-100 mt-0.5">{currency}{amount.toFixed(2)}</p>
+              <Card key={src} className="p-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-2 h-2 rounded-full bg-emerald-400" />
+                  <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">{src}</p>
+                </div>
+                <p className="text-xl font-bold text-zinc-900 dark:text-white">{currency}{amount.toFixed(2)}</p>
+                <p className="text-xs text-zinc-400 mt-0.5">{income > 0 ? Math.round((amount / income) * 100) : 0}% of total</p>
               </Card>
             ))}
           </div>
-        </div>
+        </>
       )}
 
       {/* Expenses breakdown */}
       {expByCategory.length > 0 && (
-        <div>
-          <SectionHeader>Expenses</SectionHeader>
-          <Card className="p-4 space-y-3">
+        <>
+          <SectionHeader>Where Money Went</SectionHeader>
+          <Card className="p-4 divide-y divide-zinc-100 dark:divide-zinc-800">
             {expByCategory.map(({ cat, amount, budget }) => {
-              const pct = budget > 0 ? Math.min((amount / budget) * 100, 100) : 0
+              const pct  = budget > 0 ? Math.min((amount / budget) * 100, 100) : 0
               const over = budget > 0 && amount > budget
               return (
-                <div key={cat}>
-                  <div className="flex items-center justify-between mb-1">
+                <div key={cat} className="py-3 first:pt-0 last:pb-0">
+                  <div className="flex items-center justify-between mb-1.5">
                     <span className="text-sm font-medium text-zinc-700 dark:text-zinc-200">{cat}</span>
-                    <div className="flex items-center gap-1.5">
-                      <span className={`text-sm font-bold ${over ? 'text-red-500' : 'text-zinc-700 dark:text-zinc-200'}`}>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-sm font-bold ${over ? 'text-rose-500' : 'text-zinc-800 dark:text-zinc-100'}`}>
                         {currency}{amount.toFixed(2)}
                       </span>
                       {budget > 0 && (
-                        <span className="text-xs text-zinc-400">/ {currency}{budget}</span>
+                        <span className="text-xs text-zinc-400">/{currency}{budget}</span>
                       )}
                     </div>
                   </div>
                   {budget > 0 && (
-                    <div className="h-1.5 bg-zinc-100 dark:bg-zinc-700 rounded-full overflow-hidden">
+                    <div className="h-1.5 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
                       <div
-                        className={`h-full rounded-full transition-all ${over ? 'bg-red-400' : 'bg-blue-400'}`}
+                        className={`h-full rounded-full transition-all ${over ? 'bg-rose-400' : 'bg-blue-400'}`}
                         style={{ width: `${pct}%` }}
                       />
                     </div>
@@ -135,12 +148,10 @@ function OverviewTab({ month, months, setMonth }) {
               )
             })}
           </Card>
-        </div>
+        </>
       )}
 
-      {mTx.length === 0 && (
-        <EmptyState icon={TrendingUp} text="No transactions this month" />
-      )}
+      {mTx.length === 0 && <EmptyState icon={TrendingUp} text="No transactions this month" />}
     </div>
   )
 }
@@ -148,8 +159,8 @@ function OverviewTab({ month, months, setMonth }) {
 // ─── Add tab ──────────────────────────────────────────────────────────────────
 function AddTab() {
   const { addTransaction, incomeSources, expenseCategories, currency } = useStore()
-  const [type, setType] = useState('expense')
-  const [form, setForm] = useState({ amount: '', category: '', note: '', date: format(new Date(), 'yyyy-MM-dd') })
+  const [type, setType]   = useState('expense')
+  const [form, setForm]   = useState({ amount: '', category: '', note: '', date: format(new Date(), 'yyyy-MM-dd') })
   const [success, setSuccess] = useState(false)
 
   const categories = type === 'income' ? incomeSources : expenseCategories
@@ -166,38 +177,37 @@ function AddTab() {
   return (
     <div className="space-y-4">
       {/* Type toggle */}
-      <div className="flex bg-zinc-100 dark:bg-zinc-800 rounded-2xl p-1 gap-1">
+      <div className="flex bg-zinc-100 dark:bg-zinc-800/80 rounded-2xl p-1 gap-1">
         <button
           onClick={() => { setType('expense'); setForm((f) => ({ ...f, category: '' })) }}
-          className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${type === 'expense' ? 'bg-red-500 text-white shadow-sm' : 'text-zinc-400'}`}
+          className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${type === 'expense' ? 'bg-rose-500 text-white shadow-sm' : 'text-zinc-400'}`}
         >
           Expense
         </button>
         <button
           onClick={() => { setType('income'); setForm((f) => ({ ...f, category: '' })) }}
-          className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${type === 'income' ? 'bg-green-500 text-white shadow-sm' : 'text-zinc-400'}`}
+          className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${type === 'income' ? 'bg-emerald-500 text-white shadow-sm' : 'text-zinc-400'}`}
         >
           Income
         </button>
       </div>
 
-      {/* Amount */}
-      <Card className="p-4">
-        <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wide mb-2">Amount</p>
+      {/* Big amount input */}
+      <Card className="p-5">
+        <p className="text-xs font-bold text-zinc-400 uppercase tracking-wide mb-3">Amount</p>
         <div className="flex items-center gap-2">
-          <span className="text-3xl font-bold text-zinc-400">{currency}</span>
+          <span className="text-4xl font-bold text-zinc-300 dark:text-zinc-600">{currency}</span>
           <input
             type="number"
             inputMode="decimal"
             value={form.amount}
             onChange={(e) => setForm({ ...form, amount: e.target.value })}
             placeholder="0.00"
-            className="flex-1 text-4xl font-bold bg-transparent border-0 outline-none text-zinc-900 dark:text-white placeholder:text-zinc-200 dark:placeholder:text-zinc-700"
+            className="flex-1 text-4xl font-bold bg-transparent border-0 outline-none text-zinc-900 dark:text-white placeholder:text-zinc-200 dark:placeholder:text-zinc-800"
           />
         </div>
       </Card>
 
-      {/* Category */}
       <Select
         label="Category"
         value={form.category}
@@ -207,29 +217,16 @@ function AddTab() {
         {categories.map((c) => <option key={c} value={c}>{c}</option>)}
       </Select>
 
-      {/* Date */}
-      <Input
-        label="Date"
-        type="date"
-        value={form.date}
-        onChange={(e) => setForm({ ...form, date: e.target.value })}
-      />
-
-      {/* Note */}
-      <Input
-        label="Note (optional)"
-        value={form.note}
-        onChange={(e) => setForm({ ...form, note: e.target.value })}
-        placeholder="e.g. Supermarket run"
-      />
+      <Input label="Date" type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} />
+      <Input label="Note (optional)" value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} placeholder="e.g. Lidl run, Rent for May..." />
 
       <Btn
         size="lg"
-        variant={success ? 'success' : type === 'income' ? 'success' : 'primary'}
+        variant={success ? 'success' : 'primary'}
         onClick={submit}
         disabled={!form.amount || !form.category}
       >
-        {success ? '✓ Saved!' : `Add ${type === 'income' ? 'Income' : 'Expense'}`}
+        {success ? <><Check size={18} /> Saved!</> : `Add ${type === 'income' ? 'Income' : 'Expense'}`}
       </Btn>
     </div>
   )
@@ -245,52 +242,62 @@ function HistoryTab({ month, months, setMonth }) {
     .sort((a, b) => b.date.localeCompare(a.date))
 
   const grouped = mTx.reduce((acc, t) => {
-    const key = t.date
-    if (!acc[key]) acc[key] = []
-    acc[key].push(t)
+    if (!acc[t.date]) acc[t.date] = []
+    acc[t.date].push(t)
     return acc
   }, {})
+
+  const dayIncome   = (txs) => txs.filter((t) => t.type === 'income').reduce((s, t) => s + t.amount, 0)
+  const dayExpenses = (txs) => txs.filter((t) => t.type === 'expense').reduce((s, t) => s + t.amount, 0)
 
   return (
     <div className="space-y-4">
       <MonthSelector value={month} onChange={setMonth} months={months} />
-
       {mTx.length === 0 && <EmptyState icon={TrendingDown} text="No transactions this month" />}
 
-      {Object.entries(grouped).map(([date, txs]) => (
-        <div key={date}>
-          <SectionHeader>{format(parseISO(date), 'EEE, d MMM')}</SectionHeader>
-          {txs.map((t) => (
-            <Card key={t.id} className="flex items-center gap-3 px-4 py-3 mb-1.5">
-              <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
-                t.type === 'income' ? 'bg-green-100 dark:bg-green-900/30' : 'bg-red-100 dark:bg-red-900/30'
-              }`}>
-                {t.type === 'income'
-                  ? <TrendingUp size={15} className="text-green-600 dark:text-green-400" />
-                  : <TrendingDown size={15} className="text-red-500 dark:text-red-400" />}
+      {Object.entries(grouped).map(([date, txs]) => {
+        const inc = dayIncome(txs)
+        const exp = dayExpenses(txs)
+        return (
+          <div key={date}>
+            <div className="flex items-center justify-between mb-2">
+              <SectionHeader>{format(parseISO(date), 'EEE, d MMM')}</SectionHeader>
+              <div className="flex gap-3 text-xs font-semibold">
+                {inc > 0 && <span className="text-emerald-500">+{currency}{inc.toFixed(2)}</span>}
+                {exp > 0 && <span className="text-rose-500">-{currency}{exp.toFixed(2)}</span>}
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-zinc-800 dark:text-zinc-100 truncate">{t.category}</p>
-                {t.note && <p className="text-xs text-zinc-400 truncate">{t.note}</p>}
-              </div>
-              <span className={`text-sm font-bold shrink-0 ${
-                t.type === 'income' ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'
-              }`}>
-                {t.type === 'income' ? '+' : '-'}{currency}{t.amount.toFixed(2)}
-              </span>
-              <button
-                onClick={() => setConfirmId(t.id)}
-                className="p-1 text-zinc-200 hover:text-red-400 transition-colors shrink-0"
-              >
-                <Trash2 size={14} />
-              </button>
-            </Card>
-          ))}
-        </div>
-      ))}
+            </div>
+            {txs.map((t) => (
+              <Card key={t.id} className="flex items-center gap-3 px-4 py-3.5 mb-2">
+                <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                  t.type === 'income'
+                    ? 'bg-emerald-100 dark:bg-emerald-500/15'
+                    : 'bg-rose-100 dark:bg-rose-500/15'
+                }`}>
+                  {t.type === 'income'
+                    ? <TrendingUp size={16} className="text-emerald-600 dark:text-emerald-400" />
+                    : <TrendingDown size={16} className="text-rose-500 dark:text-rose-400" />}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-100 truncate">{t.category}</p>
+                  {t.note && <p className="text-xs text-zinc-400 truncate">{t.note}</p>}
+                </div>
+                <span className={`text-sm font-bold shrink-0 ${
+                  t.type === 'income' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'
+                }`}>
+                  {t.type === 'income' ? '+' : '-'}{currency}{t.amount.toFixed(2)}
+                </span>
+                <button onClick={() => setConfirmId(t.id)} className="p-1 text-zinc-200 dark:text-zinc-700 hover:text-rose-400 transition-colors">
+                  <Trash2 size={14} />
+                </button>
+              </Card>
+            ))}
+          </div>
+        )
+      })}
 
       <Modal open={!!confirmId} onClose={() => setConfirmId(null)} title="Delete transaction?">
-        <div className="space-y-4">
+        <div className="space-y-3">
           <p className="text-sm text-zinc-500 dark:text-zinc-400">This cannot be undone.</p>
           <Btn variant="danger" size="lg" onClick={() => { deleteTransaction(confirmId); setConfirmId(null) }}>
             <Trash2 size={15} /> Delete
@@ -304,29 +311,44 @@ function HistoryTab({ month, months, setMonth }) {
 
 // ─── Budgets tab ──────────────────────────────────────────────────────────────
 function BudgetsTab() {
-  const { budgets, setBudget, expenseCategories, currency } = useStore()
+  const { budgets, setBudget, expenseCategories, currency, transactions } = useStore()
   const [editing, setEditing] = useState(null)
-  const [val, setVal] = useState('')
+  const [val, setVal]         = useState('')
+
+  const thisMonth = format(new Date(), 'yyyy-MM')
+  const mTx = transactions.filter((t) => t.date.startsWith(thisMonth) && t.type === 'expense')
 
   const save = (cat) => {
     const n = parseFloat(val)
     if (!isNaN(n) && n >= 0) setBudget(cat, n)
-    setEditing(null)
-    setVal('')
+    setEditing(null); setVal('')
   }
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-zinc-500 dark:text-zinc-400">
-        Set monthly spending limits per category. Bars in Overview will show how close you are.
-      </p>
-      <Card className="divide-y divide-zinc-100 dark:divide-zinc-700/50">
-        {expenseCategories.map((cat) => (
-          <div key={cat} className="flex items-center gap-3 px-4 py-3">
-            <p className="flex-1 text-sm font-medium text-zinc-800 dark:text-zinc-100">{cat}</p>
-            {editing === cat ? (
-              <>
-                <div className="flex items-center gap-1">
+      <Card className="p-4 bg-amber-50 dark:bg-amber-500/10 ring-amber-200/60 dark:ring-amber-500/20">
+        <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">💡 Set monthly spending limits</p>
+        <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+          Limits appear as progress bars in Overview. Tap any category to edit.
+        </p>
+      </Card>
+      <Card className="divide-y divide-zinc-100 dark:divide-zinc-800">
+        {expenseCategories.map((cat) => {
+          const spent = mTx.filter((t) => t.category === cat).reduce((s, t) => s + t.amount, 0)
+          const budget = budgets[cat] || 0
+          const over = budget > 0 && spent > budget
+          return (
+            <div key={cat} className="flex items-center gap-3 px-4 py-3.5">
+              <div className="flex-1">
+                <p className="text-sm font-medium text-zinc-800 dark:text-zinc-100">{cat}</p>
+                {budget > 0 && (
+                  <p className={`text-xs mt-0.5 ${over ? 'text-rose-500' : 'text-zinc-400'}`}>
+                    {currency}{spent.toFixed(0)} spent of {currency}{budget} {over ? '— over budget!' : ''}
+                  </p>
+                )}
+              </div>
+              {editing === cat ? (
+                <div className="flex items-center gap-1.5">
                   <span className="text-sm text-zinc-400">{currency}</span>
                   <input
                     autoFocus
@@ -334,22 +356,22 @@ function BudgetsTab() {
                     value={val}
                     onChange={(e) => setVal(e.target.value)}
                     onKeyDown={(e) => { if (e.key === 'Enter') save(cat); if (e.key === 'Escape') setEditing(null) }}
-                    className="w-20 rounded-lg bg-zinc-100 dark:bg-zinc-700 border-0 px-2 py-1 text-sm text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-20 rounded-xl bg-zinc-100 dark:bg-zinc-800 border-0 px-3 py-1.5 text-sm text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/70"
                   />
+                  <button onClick={() => save(cat)} className="p-1.5 text-emerald-500"><Check size={15} /></button>
                 </div>
-                <button onClick={() => save(cat)} className="p-1 text-green-500"><TrendingUp size={15} /></button>
-              </>
-            ) : (
-              <button
-                onClick={() => { setEditing(cat); setVal(budgets[cat] ? String(budgets[cat]) : '') }}
-                className="flex items-center gap-1 text-sm text-zinc-400 hover:text-blue-500 transition-colors"
-              >
-                {budgets[cat] ? `${currency}${budgets[cat]}` : 'Set limit'}
-                <ChevronDown size={14} />
-              </button>
-            )}
-          </div>
-        ))}
+              ) : (
+                <button
+                  onClick={() => { setEditing(cat); setVal(budget ? String(budget) : '') }}
+                  className={`flex items-center gap-1 text-sm font-semibold transition-colors ${budget ? 'text-blue-500' : 'text-zinc-400 hover:text-blue-500'}`}
+                >
+                  {budget ? `${currency}${budget}` : 'Set'}
+                  <ChevronDown size={13} />
+                </button>
+              )}
+            </div>
+          )
+        })}
       </Card>
     </div>
   )
@@ -358,37 +380,25 @@ function BudgetsTab() {
 // ─── Main ─────────────────────────────────────────────────────────────────────
 const TABS = [
   { key: 'overview', label: 'Overview' },
-  { key: 'add', label: 'Add' },
-  { key: 'history', label: 'History' },
-  { key: 'budgets', label: 'Budgets' },
+  { key: 'add',      label: '+ Add' },
+  { key: 'history',  label: 'History' },
+  { key: 'budgets',  label: 'Budgets' },
 ]
 
 export default function Finance() {
-  const [tab, setTab] = useState('overview')
   const { transactions } = useStore()
   const months = useSortedMonths(transactions)
   const [month, setMonth] = useState(months[0] ?? format(new Date(), 'yyyy-MM'))
+  const [tab, setTab]     = useState('overview')
 
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">Finance</h1>
-      <div className="flex bg-zinc-100 dark:bg-zinc-800 rounded-2xl p-1 gap-1">
-        {TABS.map(({ key, label }) => (
-          <button
-            key={key}
-            onClick={() => setTab(key)}
-            className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all ${
-              tab === key ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm' : 'text-zinc-400'
-            }`}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+      <TabBar tabs={TABS} active={tab} onChange={setTab} />
       {tab === 'overview' && <OverviewTab month={month} months={months} setMonth={setMonth} />}
-      {tab === 'add' && <AddTab />}
-      {tab === 'history' && <HistoryTab month={month} months={months} setMonth={setMonth} />}
-      {tab === 'budgets' && <BudgetsTab />}
+      {tab === 'add'      && <AddTab />}
+      {tab === 'history'  && <HistoryTab month={month} months={months} setMonth={setMonth} />}
+      {tab === 'budgets'  && <BudgetsTab />}
     </div>
   )
 }
