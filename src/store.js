@@ -131,6 +131,48 @@ export const useStore = create(
         return streak
       },
 
+      // ── Projects ─────────────────────────────────────────────────────────────
+      projects: [],
+      addProject: (p) => set((s) => ({
+        projects: [...s.projects, { id: crypto.randomUUID(), status: 'active', createdAt: today(), ...p }],
+      })),
+      updateProject: (id, patch) => set((s) => ({
+        projects: s.projects.map((p) => p.id === id ? { ...p, ...patch } : p),
+      })),
+      deleteProject: (id) => set((s) => ({
+        projects: s.projects.filter((p) => p.id !== id),
+        projectTasks: s.projectTasks.filter((t) => t.projectId !== id),
+        projectNotes: Object.fromEntries(Object.entries(s.projectNotes).filter(([k]) => k !== id)),
+        projectFiles: s.projectFiles.filter((f) => f.projectId !== id),
+      })),
+
+      projectTasks: [],
+      addProjectTask: (task) => set((s) => ({
+        projectTasks: [...s.projectTasks, { id: crypto.randomUUID(), status: 'todo', ...task }],
+      })),
+      updateProjectTask: (id, patch) => set((s) => ({
+        projectTasks: s.projectTasks.map((t) => t.id === id ? { ...t, ...patch } : t),
+      })),
+      deleteProjectTask: (id) => set((s) => ({
+        projectTasks: s.projectTasks.filter((t) => t.id !== id),
+      })),
+      moveProjectTask: (id, status) => set((s) => ({
+        projectTasks: s.projectTasks.map((t) => t.id === id ? { ...t, status } : t),
+      })),
+
+      projectNotes: {},
+      updateProjectNote: (projectId, content) => set((s) => ({
+        projectNotes: { ...s.projectNotes, [projectId]: content },
+      })),
+
+      projectFiles: [],
+      addProjectFile: (file) => set((s) => ({
+        projectFiles: [...s.projectFiles, { id: crypto.randomUUID(), uploadedAt: today(), ...file }],
+      })),
+      deleteProjectFile: (id) => set((s) => ({
+        projectFiles: s.projectFiles.filter((f) => f.id !== id),
+      })),
+
       // ── Finance ──────────────────────────────────────────────────────────────
       transactions: SEED_TRANSACTIONS,
       budgets: {},

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useLayoutEffect } from 'react'
 import { Trash2, TrendingUp, TrendingDown, ChevronDown, Plus, Check } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { useStore } from '../store'
@@ -16,24 +16,29 @@ function useSortedMonths(transactions) {
   return [...new Set([current, ...fromTx])].sort((a, b) => b.localeCompare(a))
 }
 
-// ─── Month Selector — scroll fixed with getBoundingClientRect ────────────────
+// ─── Month Selector ───────────────────────────────────────────────────────────
 function MonthSelector({ value, onChange, months }) {
   const ref = useRef(null)
+  const firstRender = useRef(true)
 
-  const scrollToActive = (smooth) => {
+  useLayoutEffect(() => {
     const container = ref.current
     if (!container) return
     const active = container.querySelector('[data-active]')
     if (!active) return
-    const activeRect = active.getBoundingClientRect()
+    const activeRect    = active.getBoundingClientRect()
     const containerRect = container.getBoundingClientRect()
-    const target = container.scrollLeft + (activeRect.left - containerRect.left) - (containerRect.width / 2) + (activeRect.width / 2)
-    container.scrollTo({ left: Math.max(0, target), behavior: smooth ? 'smooth' : 'instant' })
-  }
-
-  useEffect(() => { requestAnimationFrame(() => scrollToActive(false)) }, [])
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { scrollToActive(true) }, [value])
+    const target = Math.max(
+      0,
+      container.scrollLeft + (activeRect.left - containerRect.left) - containerRect.width / 2 + activeRect.width / 2
+    )
+    if (firstRender.current) {
+      container.scrollLeft = target
+      firstRender.current = false
+    } else {
+      container.scrollTo({ left: target, behavior: 'smooth' })
+    }
+  }, [value])
 
   return (
     <div ref={ref} className="flex gap-2 overflow-x-auto scrollbar-hide py-1">
