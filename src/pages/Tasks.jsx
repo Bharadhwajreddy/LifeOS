@@ -41,13 +41,17 @@ function InlineEdit({ value, onSave, className = '' }) {
     <div className="flex items-center gap-1.5 flex-1">
       <input autoFocus value={val} onChange={(e) => setVal(e.target.value)}
         onKeyDown={(e) => { if (e.key === 'Enter') save(); if (e.key === 'Escape') setEditing(false) }}
+        aria-label="Edit task text"
         className="flex-1 bg-zinc-100 dark:bg-zinc-800 rounded-lg px-2 py-1 text-sm text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500/70" />
-      <button onClick={save} className="p-1 text-emerald-500 shrink-0"><Check size={14} /></button>
-      <button onClick={() => setEditing(false)} className="p-1 text-zinc-400 shrink-0"><X size={14} /></button>
+      <button onClick={save} aria-label="Save" className="p-1 text-emerald-500 shrink-0"><Check size={14} /></button>
+      <button onClick={() => setEditing(false)} aria-label="Cancel" className="p-1 text-zinc-400 shrink-0"><X size={14} /></button>
     </div>
   )
   return (
-    <span className={`flex-1 ${className}`} onDoubleClick={() => { setVal(value); setEditing(true) }}>
+    <span role="button" tabIndex={0} className={`flex-1 ${className}`}
+      title="Double-tap to edit"
+      onDoubleClick={() => { setVal(value); setEditing(true) }}
+      onKeyDown={(e) => { if (e.key === 'Enter') { setVal(value); setEditing(true) } }}>
       {value}
     </span>
   )
@@ -96,7 +100,7 @@ function DailyTab() {
                     <Circle size={22} className="text-zinc-300 dark:text-zinc-600" />
                   </button>
                   <InlineEdit value={t.text} onSave={(v) => updateDailyTask(t.id, v)} className="text-sm text-zinc-800 dark:text-zinc-100 cursor-text" />
-                  <button onClick={() => deleteDailyTask(t.id)} className="p-1 text-zinc-300 hover:text-rose-400 transition-colors shrink-0"><Trash2 size={14} /></button>
+                  <button onClick={() => deleteDailyTask(t.id)} aria-label="Delete task" className="p-1 text-zinc-300 hover:text-rose-400 transition-colors shrink-0"><Trash2 size={14} /></button>
                 </Card>
               </motion.div>
             ))}
@@ -110,7 +114,7 @@ function DailyTab() {
             <Card key={t.id} className="flex items-center gap-3 px-4 py-3.5 mb-2 opacity-50">
               <button onClick={() => toggleDailyTask(t.id)} className="shrink-0"><CheckCircle2 size={22} className="text-emerald-500" /></button>
               <span className="flex-1 text-sm line-through text-zinc-400">{t.text}</span>
-              <button onClick={() => deleteDailyTask(t.id)} className="p-1 text-zinc-300 hover:text-rose-400 transition-colors"><Trash2 size={14} /></button>
+              <button onClick={() => deleteDailyTask(t.id)} aria-label="Delete task" className="p-1 text-zinc-300 hover:text-rose-400 transition-colors"><Trash2 size={14} /></button>
             </Card>
           ))}
         </>
@@ -165,13 +169,13 @@ function HabitsTab() {
         {habitsWithState.map((h) => {
           const c = HABIT_COLORS[h.color] ?? HABIT_COLORS.blue
           return (
-            <div key={h.id} className={`relative rounded-2xl p-4 ring-1 transition-all ${h.done ? `${c.card} ${c.ring}` : 'bg-white dark:bg-zinc-900 ring-zinc-200/60 dark:ring-white/[0.08]'}`}>
-              <button onClick={() => openEdit(h)} className="absolute top-2.5 right-2.5 p-1 text-zinc-300 dark:text-zinc-600 hover:text-blue-400 transition-colors"><Pencil size={11} /></button>
+            <div key={h.id} className={`relative rounded-2xl p-4 ring-1 transition-all overflow-hidden ${h.done ? `${c.card} ${c.ring}` : 'bg-white dark:bg-zinc-900 ring-zinc-200/60 dark:ring-white/[0.08]'}`}>
+              <button onClick={() => openEdit(h)} aria-label={`Edit ${h.name}`} className="absolute top-2.5 right-2.5 p-1 text-zinc-300 dark:text-zinc-600 hover:text-blue-400 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/70 rounded"><Pencil size={11} /></button>
               {h.streak > 0 && <div className={`absolute top-2.5 left-2.5 flex items-center gap-0.5 text-[10px] font-bold ${c.text}`}><Flame size={10} />{h.streak}</div>}
-              <button className="w-full text-left" onClick={() => logHabit(h.id)}>
+              <button className="w-full text-left focus:outline-none focus:ring-2 focus:ring-blue-500/70 rounded-xl" aria-label={`Log ${h.name} — ${h.count} of ${h.target} done today`} onClick={() => logHabit(h.id)}>
                 <p className="text-3xl mt-3 mb-2">{h.emoji}</p>
-                <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-100 leading-tight pr-4">{h.name}</p>
-                <div className="flex gap-1 mt-2">{Array.from({ length: h.target }).map((_, i) => <div key={i} className={`w-2.5 h-2.5 rounded-full ${i < h.count ? c.dot : 'bg-zinc-200 dark:bg-zinc-700'}`} />)}</div>
+                <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-100 leading-tight pr-4 truncate">{h.name}</p>
+                <div className="flex gap-1 mt-2 flex-wrap">{Array.from({ length: h.target }).map((_, i) => <div key={i} className={`w-2.5 h-2.5 rounded-full shrink-0 ${i < h.count ? c.dot : 'bg-zinc-200 dark:bg-zinc-700'}`} />)}</div>
                 <p className={`text-xs mt-1.5 font-semibold ${h.done ? c.text : 'text-zinc-400'}`}>{h.done ? '✓ Done' : `${h.count}/${h.target}`}</p>
               </button>
             </div>
@@ -374,7 +378,7 @@ function ProjectsList({ onOpen }) {
                       {total === 0 && <p className="text-xs text-zinc-400 mt-1">No tasks yet</p>}
                     </div>
                     <div className="flex gap-1 shrink-0">
-                      <button onClick={(e) => { e.stopPropagation(); openEdit(p) }} className="p-1.5 text-zinc-300 hover:text-blue-400 transition-colors"><Pencil size={13} /></button>
+                      <button onClick={(e) => { e.stopPropagation(); openEdit(p) }} aria-label={`Edit ${p.name}`} className="p-1.5 text-zinc-300 hover:text-blue-400 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/70 rounded"><Pencil size={13} /></button>
                       <ChevronRight size={15} className="text-zinc-300 dark:text-zinc-600 mt-1" />
                     </div>
                   </div>
@@ -443,7 +447,7 @@ function ProjectDetail({ project, onBack }) {
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <button onClick={onBack} className="p-2 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300">
+        <button onClick={onBack} aria-label="Back to projects" className="p-2 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 focus:outline-none focus:ring-2 focus:ring-blue-500/70">
           <ArrowLeft size={18} />
         </button>
         <div className={`w-10 h-10 rounded-xl ${COLOR_BG[project.color]} flex items-center justify-center shrink-0`}>
@@ -658,8 +662,8 @@ function ProjectFilesTab({ projectId }) {
               <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-100 truncate">{f.name}</p>
               <p className="text-xs text-zinc-400">{fmtSize(f.size)} · {f.uploadedAt}</p>
             </div>
-            <button onClick={() => download(f)} className="p-1.5 text-blue-400 hover:text-blue-500 transition-colors text-xs font-semibold">↓</button>
-            <button onClick={() => deleteProjectFile(f.id)} className="p-1.5 text-zinc-300 hover:text-rose-400 transition-colors"><Trash2 size={14} /></button>
+            <button onClick={() => download(f)} aria-label={`Download ${f.name}`} className="p-1.5 text-blue-400 hover:text-blue-500 transition-colors text-xs font-bold focus:outline-none focus:ring-2 focus:ring-blue-500/70 rounded">↓</button>
+            <button onClick={() => deleteProjectFile(f.id)} aria-label={`Delete ${f.name}`} className="p-1.5 text-zinc-300 hover:text-rose-400 transition-colors focus:outline-none focus:ring-2 focus:ring-rose-500/70 rounded"><Trash2 size={14} /></button>
           </Card>
         )
       })}
@@ -678,7 +682,7 @@ const TABS = [
 export default function Tasks() {
   const [tab, setTab] = useState('daily')
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 min-w-0">
       <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">Tasks</h1>
       <TabBar tabs={TABS} active={tab} onChange={setTab} />
       {tab === 'daily'    && <DailyTab />}

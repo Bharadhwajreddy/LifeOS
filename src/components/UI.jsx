@@ -9,7 +9,7 @@ export function Card({ children, className = '' }) {
 
 // Button
 export function Btn({ children, onClick, variant = 'primary', size = 'md', className = '', disabled = false, type = 'button' }) {
-  const base = 'inline-flex items-center justify-center gap-2 font-semibold rounded-xl transition-all active:scale-[0.97] disabled:opacity-40 select-none'
+  const base = 'inline-flex items-center justify-center gap-2 font-semibold rounded-xl transition-all active:scale-[0.97] disabled:opacity-40 select-none focus:outline-none focus:ring-2 focus:ring-blue-500/70 focus:ring-offset-1 dark:focus:ring-offset-zinc-900'
   const sizes = { sm: 'px-3 py-1.5 text-xs', md: 'px-4 py-2.5 text-sm', lg: 'w-full py-3.5 text-[15px]' }
   const variants = {
     primary: 'bg-blue-500 text-white hover:bg-blue-600 hover:shadow-lg hover:shadow-blue-500/40 shadow-sm shadow-blue-500/25',
