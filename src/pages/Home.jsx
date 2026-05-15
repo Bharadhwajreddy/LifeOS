@@ -1,5 +1,5 @@
-import { format, parseISO, isBefore, startOfDay, differenceInDays } from 'date-fns'
-import { CheckCircle2, Circle, ArrowRight, TrendingUp, TrendingDown, Bell, Heart, Flame } from 'lucide-react'
+import { format, parseISO, isBefore, startOfDay, differenceInDays, addDays } from 'date-fns'
+import { CheckCircle2, Circle, ArrowRight, TrendingUp, TrendingDown, Bell, Heart, Flame, Calendar, Clock, MapPin } from 'lucide-react'
 import { useStore } from '../store'
 import { useNavigate } from 'react-router-dom'
 
@@ -30,7 +30,7 @@ function ProgressRing({ done, total, size = 56, color = '#3b82f6' }) {
 }
 
 export default function Home() {
-  const { name, dailyTasks, tasks, transactions, gifts, dates, currency, habits, habitLogs } = useStore()
+  const { name, dailyTasks, tasks, appointments, transactions, gifts, dates, currency, habits, habitLogs } = useStore()
   const navigate = useNavigate()
 
   const todayStr = format(new Date(), 'yyyy-MM-dd')
@@ -52,6 +52,13 @@ export default function Home() {
   const monthIncome   = monthTx.filter((t) => t.type === 'income').reduce((s, t) => s + t.amount, 0)
   const monthExpenses = monthTx.filter((t) => t.type === 'expense').reduce((s, t) => s + t.amount, 0)
   const saved = monthIncome - monthExpenses
+
+  // Upcoming appointments (today + next 3 days)
+  const in3Days = format(addDays(new Date(), 3), 'yyyy-MM-dd')
+  const upcomingApts = (appointments ?? [])
+    .filter((a) => a.date >= todayStr && a.date <= in3Days)
+    .sort((a, b) => a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime))
+    .slice(0, 3)
 
   // Alerts
   const overdueTasks = tasks.filter(
@@ -160,6 +167,43 @@ export default function Home() {
                 <span className="opacity-60">{h.count}/{h.target}</span>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── Upcoming appointments ── */}
+      {upcomingApts.length > 0 && (
+        <div
+          className="bg-white dark:bg-zinc-900 rounded-2xl ring-1 ring-zinc-200/60 dark:ring-white/[0.06] overflow-hidden cursor-pointer active:scale-[0.98] transition-transform"
+          onClick={() => navigate('/tasks')}
+        >
+          <div className="flex items-center justify-between px-4 pt-4 pb-2">
+            <div className="flex items-center gap-2">
+              <Calendar size={15} className="text-teal-500" />
+              <p className="font-semibold text-zinc-800 dark:text-zinc-100">Upcoming</p>
+            </div>
+            <ArrowRight size={15} className="text-zinc-400" />
+          </div>
+          <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
+            {upcomingApts.map((apt) => {
+              const isAptToday = apt.date === todayStr
+              const diff = differenceInDays(parseISO(apt.date), new Date())
+              return (
+                <div key={apt.id} className="flex items-start gap-3 px-4 py-2.5">
+                  <div className="w-1 h-full min-h-[32px] rounded-full bg-teal-500 shrink-0 mt-0.5" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-100 truncate">{apt.title}</p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      {apt.startTime && <span className="text-xs text-zinc-400 flex items-center gap-1"><Clock size={10} />{apt.startTime}</span>}
+                      {apt.location && <span className="text-xs text-zinc-400 flex items-center gap-1 truncate"><MapPin size={10} />{apt.location}</span>}
+                    </div>
+                  </div>
+                  <span className={`text-[10px] font-bold shrink-0 px-2 py-0.5 rounded-full ${isAptToday ? 'bg-teal-100 dark:bg-teal-500/20 text-teal-700 dark:text-teal-300' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400'}`}>
+                    {isAptToday ? 'Today' : diff === 1 ? 'Tomorrow' : `In ${diff}d`}
+                  </span>
+                </div>
+              )
+            })}
           </div>
         </div>
       )}

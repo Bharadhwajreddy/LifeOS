@@ -64,17 +64,48 @@ export const useStore = create(
 
       // ── Daily tasks ──────────────────────────────────────────────────────────
       dailyTasks: [],
-      addDailyTask: (text) => set((s) => ({
-        dailyTasks: [...s.dailyTasks, { id: crypto.randomUUID(), text, done: false, date: today() }],
-      })),
-      updateDailyTask: (id, text) => set((s) => ({
-        dailyTasks: s.dailyTasks.map((t) => t.id === id ? { ...t, text } : t),
+      // Accepts a full task object OR a plain string for backwards compatibility
+      addDailyTask: (task) => set((s) => {
+        const obj = typeof task === 'string'
+          ? { text: task, date: today(), priority: 'med', notes: '', dueTime: '' }
+          : { text: task.text, date: task.date || today(), priority: task.priority || 'med', notes: task.notes || '', dueTime: task.dueTime || '' }
+        return { dailyTasks: [...s.dailyTasks, { id: crypto.randomUUID(), done: false, createdAt: today(), ...obj }] }
+      }),
+      // Accepts a patch object OR a plain string (text-only patch) for backwards compatibility
+      updateDailyTask: (id, patch) => set((s) => ({
+        dailyTasks: s.dailyTasks.map((t) =>
+          t.id === id ? { ...t, ...(typeof patch === 'string' ? { text: patch } : patch) } : t
+        ),
       })),
       toggleDailyTask: (id) => set((s) => ({
         dailyTasks: s.dailyTasks.map((t) => t.id === id ? { ...t, done: !t.done } : t),
       })),
       deleteDailyTask: (id) => set((s) => ({
         dailyTasks: s.dailyTasks.filter((t) => t.id !== id),
+      })),
+
+      // ── Appointments ─────────────────────────────────────────────────────────
+      appointments: [],
+      addAppointment: (apt) => set((s) => ({
+        appointments: [...s.appointments, {
+          id: crypto.randomUUID(),
+          title: apt.title || '',
+          notes: apt.notes || '',
+          date: apt.date || today(),
+          startTime: apt.startTime || '',
+          endTime: apt.endTime || '',
+          location: apt.location || '',
+          meetingLink: apt.meetingLink || '',
+          important: apt.important || false,
+          reminder: apt.reminder || 'none',
+          createdAt: today(),
+        }],
+      })),
+      updateAppointment: (id, patch) => set((s) => ({
+        appointments: s.appointments.map((a) => a.id === id ? { ...a, ...patch } : a),
+      })),
+      deleteAppointment: (id) => set((s) => ({
+        appointments: s.appointments.filter((a) => a.id !== id),
       })),
 
       // ── Kanban tasks ─────────────────────────────────────────────────────────
