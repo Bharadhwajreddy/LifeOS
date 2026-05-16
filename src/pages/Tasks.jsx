@@ -1131,9 +1131,34 @@ function CalendarTab() {
         </div>
 
         {!selApts.length && !selTasks.length && (
-          <div className="text-center py-8">
-            <p className="text-zinc-400 dark:text-zinc-600 text-sm mb-3">Nothing scheduled</p>
-            <p className="text-xs text-zinc-300 dark:text-zinc-700">Tap + Task or + Appt above to add something</p>
+          <div className="space-y-3 pt-2 pb-4">
+            <p className="text-center text-sm text-zinc-400 dark:text-zinc-500 mb-1">
+              Nothing on {isToday(selected) ? 'today' : format(selected, 'MMM d')} — add something:
+            </p>
+            <button
+              onClick={() => { setEditTask(null); setTaskModal(true) }}
+              className="w-full flex items-center gap-3 p-4 rounded-2xl bg-blue-50 dark:bg-blue-500/10 border border-blue-200/50 dark:border-blue-500/20 text-left active:scale-[0.98] transition-all"
+            >
+              <div className="w-10 h-10 rounded-xl bg-blue-500 flex items-center justify-center shrink-0 shadow-md shadow-blue-500/30">
+                <Plus size={20} className="text-white" strokeWidth={2.5} />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-blue-700 dark:text-blue-300">Add Task</p>
+                <p className="text-xs text-blue-500/70 dark:text-blue-400/60">for {isToday(selected) ? 'today' : format(selected, 'EEE, MMM d')}</p>
+              </div>
+            </button>
+            <button
+              onClick={() => { setEditApt(null); setAptModal(true) }}
+              className="w-full flex items-center gap-3 p-4 rounded-2xl bg-teal-50 dark:bg-teal-500/10 border border-teal-200/50 dark:border-teal-500/20 text-left active:scale-[0.98] transition-all"
+            >
+              <div className="w-10 h-10 rounded-xl bg-teal-500 flex items-center justify-center shrink-0 shadow-md shadow-teal-500/30">
+                <Calendar size={18} className="text-white" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-teal-700 dark:text-teal-300">Add Appointment</p>
+                <p className="text-xs text-teal-500/70 dark:text-teal-400/60">for {isToday(selected) ? 'today' : format(selected, 'EEE, MMM d')}</p>
+              </div>
+            </button>
           </div>
         )}
 

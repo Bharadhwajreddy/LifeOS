@@ -1,45 +1,47 @@
 @import "tailwindcss";
 
 @layer base {
-  * { -webkit-tap-highlight-color: transparent; }
+  * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
 
   body {
-    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+    font-family: Inter, 'SF Pro Display', 'SF Pro Text', system-ui, -apple-system, sans-serif;
     overscroll-behavior: none;
+    -webkit-font-smoothing: antialiased;
   }
 
   :root {
-    --bg-primary: #F8F9FA;
-    --bg-secondary: #FFFFFF;
-    --text-primary: #0F172A;
-    --text-secondary: #64748B;
-    --border: #E2E8F0;
-    --blue-primary: #3B82F6;
-    --blue-light: #DBEAFE;
-    --teal-primary: #14B8A6;
-    --teal-light: #CCFBF1;
-    --purple-primary: #8B5CF6;
-    --purple-light: #EDE9FE;
-    --red-primary: #EF4444;
-    --green-primary: #10B981;
-    --amber-primary: #F59E0B;
+    --bg-primary: #FFFFFF;
+    --bg-secondary: #F7F8FA;
+    --text-primary: #1F2937;
+    --text-secondary: #6B7280;
+    --border-soft: #E5E7EB;
+    --accent-blue: #6EA8FE;
+    --accent-blue-strong: #3B82F6;
+    --accent-teal: #14B8A6;
+    --accent-coral: #FF8A6E;
+    --accent-gold: #FFC857;
+    --shadow-soft: 0 8px 24px rgba(15,23,42,0.06);
+    --shadow-card: 0 12px 32px rgba(15,23,42,0.08);
+    --shadow-floating: 0 16px 40px rgba(59,130,246,0.25);
   }
 
   .dark {
     --bg-primary: #0B0F14;
-    --bg-secondary: #161B27;
-    --text-primary: #F8FAFC;
-    --text-secondary: #94A3B8;
-    --border: #1E293B;
-    --blue-primary: #2563EB;
-    --blue-light: #1E40AF;
-    --teal-primary: #14B8A6;
-    --teal-light: #0D9488;
-    --purple-primary: #8B5CF6;
-    --purple-light: #7C3AED;
-    --red-primary: #DC2626;
-    --green-primary: #059669;
-    --amber-primary: #D97706;
+    --bg-secondary: #121724;
+    --bg-card: #151C2A;
+    --text-primary: #E6EAF2;
+    --text-secondary: #9CA3AF;
+    --border-soft: rgba(255,255,255,0.08);
+    --accent-blue: #2563EB;
+    --accent-blue-bright: #3B82F6;
+    --accent-teal: #14B8A6;
+    --accent-violet: #8B5CF6;
+    --accent-coral: #FF6B6B;
+    --accent-gold: #F59E0B;
+    --shadow-soft: 0 12px 32px rgba(0,0,0,0.35);
+    --shadow-card: 0 16px 44px rgba(0,0,0,0.45);
+    --glow-blue: 0 0 24px rgba(37,99,235,0.35);
+    --glow-teal: 0 0 24px rgba(20,184,166,0.25);
     color-scheme: dark;
   }
 }
@@ -47,6 +49,5 @@
 @layer utilities {
   .scrollbar-hide::-webkit-scrollbar { display: none; }
   .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-
   .safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
 }

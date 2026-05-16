@@ -30,8 +30,12 @@ function AppInner() {
     document.documentElement.classList.toggle('dark', darkMode)
   }, [darkMode])
 
+  const bgStyle = darkMode
+    ? { background: 'radial-gradient(circle at top center, #172033 0%, #0B0F14 55%, #070A0F 100%)' }
+    : {}
+
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-[#0B0F14] transition-colors overflow-x-hidden">
+    <div className="min-h-screen bg-gradient-to-b from-white to-[#F7F8FA] dark:bg-none transition-colors overflow-x-hidden" style={darkMode ? bgStyle : {}}>
       <main className="max-w-md mx-auto px-4 pt-6 pb-32">
         <AnimatePresence mode="wait">
           <Routes location={location} key={location.pathname}>
