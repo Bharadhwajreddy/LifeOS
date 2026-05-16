@@ -8,7 +8,40 @@
     overscroll-behavior: none;
   }
 
-  .dark body { color-scheme: dark; }
+  :root {
+    --bg-primary: #F8F9FA;
+    --bg-secondary: #FFFFFF;
+    --text-primary: #0F172A;
+    --text-secondary: #64748B;
+    --border: #E2E8F0;
+    --blue-primary: #3B82F6;
+    --blue-light: #DBEAFE;
+    --teal-primary: #14B8A6;
+    --teal-light: #CCFBF1;
+    --purple-primary: #8B5CF6;
+    --purple-light: #EDE9FE;
+    --red-primary: #EF4444;
+    --green-primary: #10B981;
+    --amber-primary: #F59E0B;
+  }
+
+  .dark {
+    --bg-primary: #0B0F14;
+    --bg-secondary: #161B27;
+    --text-primary: #F8FAFC;
+    --text-secondary: #94A3B8;
+    --border: #1E293B;
+    --blue-primary: #2563EB;
+    --blue-light: #1E40AF;
+    --teal-primary: #14B8A6;
+    --teal-light: #0D9488;
+    --purple-primary: #8B5CF6;
+    --purple-light: #7C3AED;
+    --red-primary: #DC2626;
+    --green-primary: #059669;
+    --amber-primary: #D97706;
+    color-scheme: dark;
+  }
 }
 
 @layer utilities {

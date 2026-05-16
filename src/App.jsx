@@ -31,7 +31,7 @@ function AppInner() {
   }, [darkMode])
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-[#0a0a10] transition-colors overflow-x-hidden">
+    <div className="min-h-screen bg-zinc-50 dark:bg-[#0B0F14] transition-colors overflow-x-hidden">
       <main className="max-w-md mx-auto px-4 pt-6 pb-32">
         <AnimatePresence mode="wait">
           <Routes location={location} key={location.pathname}>

@@ -46,7 +46,7 @@ export default function Modal({ open, onClose, title, children }) {
             aria-label={title}
             initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            className="fixed bottom-0 left-0 right-0 z-[61] bg-white dark:bg-zinc-900 rounded-t-3xl max-h-[90vh] overflow-y-auto overscroll-contain"
+            className="fixed bottom-0 left-0 right-0 z-[61] bg-white dark:bg-[#161B27] rounded-t-3xl max-h-[90vh] overflow-y-auto overscroll-contain"
             style={{ WebkitOverflowScrolling: 'touch' }}
           >
             {/* Drag handle */}

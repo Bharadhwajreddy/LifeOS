@@ -270,7 +270,7 @@ function TaskItem({ task, onToggle, onEdit, onDelete, onReschedule, showDate = f
       className={`flex items-center gap-3 px-4 py-3.5 mb-2 rounded-2xl ring-1 transition-all ${
         overdue
           ? 'border-l-4 border-rose-500 bg-rose-50/50 dark:bg-rose-500/5 ring-rose-200/60 dark:ring-rose-500/20'
-          : 'bg-white dark:bg-zinc-900 ring-zinc-200/60 dark:ring-white/[0.08]'
+          : 'bg-white dark:bg-[#161B27] ring-zinc-200/60 dark:ring-white/[0.06]'
       }`}
     >
       {/* Square checkbox */}
@@ -1910,7 +1910,7 @@ function ProjectNotesTab({ projectId }) {
         value={text}
         onChange={(e) => handleChange(e.target.value)}
         placeholder={"Write anything here — ideas, meeting notes, links, plans...\n\nThis notepad auto-saves as you type."}
-        className="w-full min-h-[60vh] rounded-2xl bg-white dark:bg-zinc-900 ring-1 ring-zinc-200/60 dark:ring-white/[0.08] p-4 text-sm text-zinc-800 dark:text-zinc-100 placeholder:text-zinc-300 dark:placeholder:text-zinc-700 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/70 leading-relaxed"
+        className="w-full min-h-[60vh] rounded-2xl bg-white dark:bg-[#161B27] ring-1 ring-zinc-200/60 dark:ring-white/[0.06] p-4 text-sm text-zinc-800 dark:text-zinc-100 placeholder:text-zinc-300 dark:placeholder:text-zinc-700 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/70 leading-relaxed"
       />
     </div>
   )

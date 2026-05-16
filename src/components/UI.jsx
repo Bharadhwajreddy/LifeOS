@@ -1,7 +1,7 @@
 // Card
 export function Card({ children, className = '' }) {
   return (
-    <div className={`bg-white dark:bg-zinc-900 rounded-2xl shadow-sm dark:shadow-lg dark:shadow-black/30 ring-1 ring-zinc-200/60 dark:ring-white/[0.08] ${className}`}>
+    <div className={`bg-white dark:bg-[#161B27] rounded-2xl shadow-sm dark:shadow-lg dark:shadow-black/30 ring-1 ring-zinc-200/60 dark:ring-white/[0.06] dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] ${className}`}>
       {children}
     </div>
   )

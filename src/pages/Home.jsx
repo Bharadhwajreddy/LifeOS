@@ -116,28 +116,28 @@ export default function Home() {
 
       {/* ── Finance snapshot ── */}
       <div
-        className="bg-white dark:bg-zinc-900 rounded-2xl ring-1 ring-zinc-200/60 dark:ring-white/[0.06] overflow-hidden cursor-pointer active:scale-[0.98] transition-transform"
+        className="bg-gradient-to-br from-white to-zinc-50 dark:from-[#161B27] dark:to-[#1A1F2E] rounded-2xl ring-1 ring-zinc-200/60 dark:ring-white/[0.06] overflow-hidden cursor-pointer active:scale-[0.98] transition-all hover:shadow-md dark:hover:shadow-blue-500/5"
         onClick={() => navigate('/finance')}
       >
         <div className="flex items-center justify-between px-4 pt-4 pb-2">
           <p className="font-semibold text-zinc-800 dark:text-zinc-100">{format(new Date(), 'MMMM')} Finance</p>
           <ArrowRight size={15} className="text-zinc-400" />
         </div>
-        <div className="grid grid-cols-3 divide-x divide-zinc-100 dark:divide-zinc-800">
+        <div className="grid grid-cols-3 divide-x divide-zinc-100 dark:divide-zinc-800/60">
           <div className="px-3 py-3">
-            <p className="text-[10px] font-semibold text-emerald-500 uppercase tracking-wide flex items-center gap-1">
+            <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-wide flex items-center gap-1">
               <TrendingUp size={10} /> Income
             </p>
             <p className="text-lg font-bold text-zinc-900 dark:text-white mt-0.5">{currency}{monthIncome.toFixed(0)}</p>
           </div>
           <div className="px-3 py-3">
-            <p className="text-[10px] font-semibold text-rose-500 uppercase tracking-wide flex items-center gap-1">
+            <p className="text-[10px] font-bold text-rose-500 uppercase tracking-wide flex items-center gap-1">
               <TrendingDown size={10} /> Spent
             </p>
             <p className="text-lg font-bold text-zinc-900 dark:text-white mt-0.5">{currency}{monthExpenses.toFixed(0)}</p>
           </div>
           <div className="px-3 py-3">
-            <p className={`text-[10px] font-semibold uppercase tracking-wide ${saved >= 0 ? 'text-blue-500' : 'text-amber-500'}`}>Saved</p>
+            <p className={`text-[10px] font-bold uppercase tracking-wide ${saved >= 0 ? 'text-blue-500' : 'text-amber-500'}`}>Saved</p>
             <p className={`text-lg font-bold mt-0.5 ${saved >= 0 ? 'text-zinc-900 dark:text-white' : 'text-amber-500'}`}>
               {saved >= 0 ? '+' : ''}{currency}{saved.toFixed(0)}
             </p>
@@ -148,23 +148,23 @@ export default function Home() {
       {/* ── Habit streaks quick view ── */}
       {habitsToday.length > 0 && (
         <div
-          className="bg-white dark:bg-zinc-900 rounded-2xl ring-1 ring-zinc-200/60 dark:ring-white/[0.06] p-4 cursor-pointer active:scale-[0.98] transition-transform"
+          className="bg-gradient-to-br from-white to-zinc-50 dark:from-[#161B27] dark:to-[#1A1F2E] rounded-2xl ring-1 ring-zinc-200/60 dark:ring-white/[0.06] p-4 cursor-pointer active:scale-[0.98] transition-all hover:shadow-md dark:hover:shadow-violet-500/5"
           onClick={() => navigate('/tasks')}
         >
           <div className="flex items-center justify-between mb-3">
             <p className="font-semibold text-zinc-800 dark:text-zinc-100">Today's Habits</p>
-            <ArrowRight size={15} className="text-zinc-400" />
+            <span className="text-xs font-bold text-zinc-400">{doneHabits}/{habitsToday.length} done</span>
           </div>
           <div className="flex gap-2 flex-wrap">
             {habitsToday.map((h) => (
               <div key={h.id} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
                 h.done
                   ? 'bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300'
-                  : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400'
+                  : 'bg-zinc-100 dark:bg-zinc-800/80 text-zinc-500 dark:text-zinc-400'
               }`}>
                 <span>{h.emoji}</span>
                 <span>{h.name}</span>
-                <span className="opacity-60">{h.count}/{h.target}</span>
+                <span className={`font-bold ${h.done ? 'opacity-70' : 'opacity-60'}`}>{h.count}/{h.target}</span>
               </div>
             ))}
           </div>
@@ -174,31 +174,33 @@ export default function Home() {
       {/* ── Upcoming appointments ── */}
       {upcomingApts.length > 0 && (
         <div
-          className="bg-white dark:bg-zinc-900 rounded-2xl ring-1 ring-zinc-200/60 dark:ring-white/[0.06] overflow-hidden cursor-pointer active:scale-[0.98] transition-transform"
+          className="bg-gradient-to-br from-white to-zinc-50 dark:from-[#161B27] dark:to-[#1A1F2E] rounded-2xl ring-1 ring-zinc-200/60 dark:ring-white/[0.06] overflow-hidden cursor-pointer active:scale-[0.98] transition-all hover:shadow-md dark:hover:shadow-teal-500/5"
           onClick={() => navigate('/tasks')}
         >
           <div className="flex items-center justify-between px-4 pt-4 pb-2">
             <div className="flex items-center gap-2">
-              <Calendar size={15} className="text-teal-500" />
+              <div className="w-6 h-6 rounded-lg bg-teal-500/15 flex items-center justify-center">
+                <Calendar size={13} className="text-teal-500" />
+              </div>
               <p className="font-semibold text-zinc-800 dark:text-zinc-100">Upcoming</p>
             </div>
             <ArrowRight size={15} className="text-zinc-400" />
           </div>
-          <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
+          <div className="divide-y divide-zinc-100/80 dark:divide-zinc-800/60">
             {upcomingApts.map((apt) => {
               const isAptToday = apt.date === todayStr
               const diff = differenceInDays(parseISO(apt.date), new Date())
               return (
-                <div key={apt.id} className="flex items-start gap-3 px-4 py-2.5">
-                  <div className="w-1 h-full min-h-[32px] rounded-full bg-teal-500 shrink-0 mt-0.5" />
+                <div key={apt.id} className="flex items-center gap-3 px-4 py-2.5">
+                  <div className="w-0.5 h-8 rounded-full bg-teal-500 shrink-0" />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-100 truncate">{apt.title}</p>
                     <div className="flex items-center gap-2 mt-0.5">
                       {apt.startTime && <span className="text-xs text-zinc-400 flex items-center gap-1"><Clock size={10} />{apt.startTime}</span>}
-                      {apt.location && <span className="text-xs text-zinc-400 flex items-center gap-1 truncate"><MapPin size={10} />{apt.location}</span>}
+                      {apt.location && <span className="text-xs text-zinc-400 flex items-center gap-1 truncate max-w-[120px]"><MapPin size={10} />{apt.location}</span>}
                     </div>
                   </div>
-                  <span className={`text-[10px] font-bold shrink-0 px-2 py-0.5 rounded-full ${isAptToday ? 'bg-teal-100 dark:bg-teal-500/20 text-teal-700 dark:text-teal-300' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400'}`}>
+                  <span className={`text-[10px] font-bold shrink-0 px-2.5 py-1 rounded-full ${isAptToday ? 'bg-teal-100 dark:bg-teal-500/20 text-teal-700 dark:text-teal-300' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400'}`}>
                     {isAptToday ? 'Today' : diff === 1 ? 'Tomorrow' : `In ${diff}d`}
                   </span>
                 </div>
