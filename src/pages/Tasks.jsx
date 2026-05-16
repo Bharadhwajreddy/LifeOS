@@ -14,6 +14,7 @@ import {
 } from 'date-fns'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useStore } from '../store'
+import { getTheme } from '../lib/themes'
 import Modal from '../components/Modal'
 import { Card, Btn, Input, Select, Badge, SectionHeader, EmptyState } from '../components/UI'
 
@@ -2018,19 +2019,20 @@ function ProjectFilesTab({ projectId }) {
 
 // ─── FAB (Floating Action Button) ────────────────────────────────────────────
 function FAB() {
-  const { addDailyTask, addAppointment } = useStore()
+  const { addDailyTask, addAppointment, theme } = useStore()
+  const th = getTheme(theme)
   const [open, setOpen]       = useState(false)
   const [taskOpen, setTaskOpen]   = useState(false)
   const [aptOpen, setAptOpen]     = useState(false)
 
   return (
     <>
-      {/* Fixed blue circle button above bottom nav */}
+      {/* Floating action button above bottom nav */}
       <motion.button
         onClick={() => setOpen(true)}
         whileTap={{ scale: 0.9 }}
         aria-label="Quick add task or appointment"
-        className="fixed bottom-[88px] right-4 w-14 h-14 bg-blue-500 rounded-full shadow-xl shadow-blue-500/40 flex items-center justify-center text-white z-40 hover:bg-blue-600 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/70 focus:ring-offset-2"
+        className={`fixed bottom-[88px] right-4 w-14 h-14 ${th.fabBg} rounded-full shadow-xl ${th.fabShadow} flex items-center justify-center text-white z-40 transition-colors focus:outline-none`}
       >
         <Plus size={26} strokeWidth={2.5} />
       </motion.button>

@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useStore } from './store'
+import { getTheme } from './lib/themes'
 import BottomNav from './components/BottomNav'
 import Home from './pages/Home'
 import Tasks from './pages/Tasks'
@@ -24,18 +25,19 @@ function PageWrapper({ children }) {
 
 function AppInner() {
   const location = useLocation()
-  const { darkMode } = useStore()
+  const { darkMode, theme } = useStore()
+  const t = getTheme(theme)
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', darkMode)
   }, [darkMode])
 
   const bgStyle = darkMode
-    ? { background: 'radial-gradient(circle at top center, #172033 0%, #0B0F14 55%, #070A0F 100%)' }
-    : {}
+    ? { background: t.darkBg }
+    : { background: 'linear-gradient(180deg, #FFFFFF 0%, #F7F8FA 100%)' }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-[#F7F8FA] dark:bg-none transition-colors overflow-x-hidden" style={darkMode ? bgStyle : {}}>
+    <div className="min-h-screen transition-colors overflow-x-hidden" style={bgStyle}>
       <main className="max-w-md mx-auto px-4 pt-6 pb-32">
         <AnimatePresence mode="wait">
           <Routes location={location} key={location.pathname}>

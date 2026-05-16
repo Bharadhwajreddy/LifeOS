@@ -18,6 +18,7 @@ export const useStore = create(
     (set, get) => ({
       name: 'Bharadhwaj',
       darkMode: true,
+      theme: 'ocean',
       currency: '€',
 
       // ── Income sources ───────────────────────────────────────────────────────
@@ -268,6 +269,7 @@ export const useStore = create(
       // ── Profile ──────────────────────────────────────────────────────────────
       setName: (name) => set({ name }),
       toggleDarkMode: () => set((s) => ({ darkMode: !s.darkMode })),
+      setTheme: (theme) => set({ theme }),
       setCurrency: (currency) => set({ currency }),
     }),
     { name: 'lifeos-v4' }

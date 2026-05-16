@@ -3,6 +3,7 @@ import { Moon, Sun, Trash2, Plus, Pencil, Check, X } from 'lucide-react'
 import { useStore } from '../store'
 import { Card, Btn, Input, Select, SectionHeader } from '../components/UI'
 import Modal from '../components/Modal'
+import { THEMES } from '../lib/themes'
 
 function EditableItem({ name, onRename, onDelete, canDelete }) {
   const [editing, setEditing] = useState(false)
@@ -47,6 +48,7 @@ function EditableItem({ name, onRename, onDelete, canDelete }) {
 export default function Settings() {
   const {
     name, setName, darkMode, toggleDarkMode, currency, setCurrency,
+    theme, setTheme,
     incomeSources, addIncomeSource, renameIncomeSource, deleteIncomeSource,
     expenseCategories, addExpenseCategory, renameExpenseCategory, deleteExpenseCategory,
   } = useStore()
@@ -94,6 +96,34 @@ export default function Settings() {
             <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-all duration-200 ${darkMode ? 'left-[26px]' : 'left-0.5'}`} />
           </button>
         </Card>
+      </section>
+
+      <section className="space-y-2">
+        <SectionHeader>Theme</SectionHeader>
+        <div className="grid grid-cols-5 gap-2">
+          {THEMES.map((th) => (
+            <button
+              key={th.id}
+              onClick={() => setTheme(th.id)}
+              className={`flex flex-col items-center gap-1.5 p-2 rounded-2xl border-2 transition-all active:scale-[0.96] ${
+                theme === th.id
+                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-500/10'
+                  : 'border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800/50'
+              }`}
+            >
+              {/* Colour dots */}
+              <div className="flex gap-0.5">
+                {th.preview.map((c, i) => (
+                  <div key={i} className="w-3 h-3 rounded-full" style={{ backgroundColor: c }} />
+                ))}
+              </div>
+              <span className="text-[10px] font-bold text-zinc-600 dark:text-zinc-300 leading-none">{th.name}</span>
+              {theme === th.id && (
+                <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+              )}
+            </button>
+          ))}
+        </div>
       </section>
 
       <section className="space-y-2">
