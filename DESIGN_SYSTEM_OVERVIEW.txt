@@ -1,0 +1,489 @@
+================================================================================
+                     LifeOS PREMIUM DESIGN SYSTEM
+                      Complete Specification v1.0
+================================================================================
+
+PROJECT GOAL:
+Transform LifeOS from a plain interface into a premium personal planner 
+inspired by: LifeFlow, Things 3, Fantastical, and Notion.
+
+================================================================================
+                            DESIGN TOKENS
+================================================================================
+
+DARK MODE (Primary for Premium Feel):
+  Background:        #0B0F14 (deep navy)
+  Cards:             #161B27 (dark gray)
+  Text:              #F8FAFC (off-white)
+  Primary Accent:    #2563EB (brighter blue)
+  Teal Accent:       #14B8A6 (cyan-teal)
+  Purple Accent:     #8B5CF6 (vibrant purple)
+  Border:            #1E293B (slate-800)
+  Hover:             #1F2433 (slightly lighter)
+
+LIGHT MODE (Secondary):
+  Background:        #F8F9FA (off-white)
+  Cards:             #FFFFFF (pure white)
+  Text:              #0F172A (dark slate)
+  Primary Accent:    #3B82F6 (blue)
+  Teal Accent:       #14B8A6 (teal)
+  Border:            #E2E8F0 (zinc-200)
+
+PRIORITY COLORS:
+  High:              #EF4444 (red)
+  Medium:            #F59E0B (amber)
+  Low:               #10B981 (green)
+
+================================================================================
+                         TYPOGRAPHY SCALE
+================================================================================
+
+Page Title:        26px, Bold (700),      Leading 1.2
+  Example: "Home, Alex 👋"
+
+Section Header:    18px, Semibold (600),  Leading 1.3
+  Example: "Today's Overview"
+
+Body Text:         14px, Regular (400),   Leading 1.5
+  Example: Task names, descriptions
+
+Label/Caption:     11px, Bold (600),      Uppercase, Tracking wide
+  Example: "Daily Tasks", "HIGH PRIORITY"
+
+Font Family: System Default (SF Pro / Segoe UI)
+
+================================================================================
+                         COMPONENT SPECS
+================================================================================
+
+TASK ITEM (with priority):
+├─ Checkbox:  20x20px square (rounded-none), blue when checked
+├─ Text:      14px, strikethrough when done
+├─ Priority:  11px bold pill (red/amber/green background)
+└─ Hover:     bg lightens, scale 0.98 on press
+
+APPOINTMENT CARD:
+├─ Layout:    Gradient bg + icon support
+├─ Date:      11px bold uppercase label
+├─ Title:     14px semibold text
+├─ Icons:     Clock (time), MapPin (location)
+├─ Important: Red dot indicator with pulse
+└─ Overdue:   Red tint background
+
+HABIT ROW:
+├─ Left:      Emoji + name + "X/target" count
+├─ Right:     Circular progress ring (SVG)
+├─ Animate:   Ring fills smoothly (500ms ease)
+└─ Tap:       Log habit, scale feedback
+
+STAT CARD (Finance):
+├─ Gradient:  from-white to-zinc-50 (light) / custom dark
+├─ Label:     11px bold uppercase
+├─ Value:     24px bold number
+├─ Change:    12px text with +/- icon, colored
+└─ Hover:     y: -2px, shadow grows
+
+FAB (Floating Action Button):
+├─ Size:      56x56px (w-14 h-14)
+├─ Shape:     Rounded full (perfect circle)
+├─ Color:     Blue with blue shadow
+├─ Position:  Centered in bottom nav
+└─ Press:     scale 0.92, haptic feedback
+
+PILL TAB (Filter/Nav):
+├─ Active:    Blue background, white text, shadow
+├─ Inactive:  Gray background, darker text
+├─ Padding:   px-4 py-2 (horizontal emphasis)
+└─ Press:     scale 0.95 transition
+
+CALENDAR DAY CELL:
+├─ Size:      Aspect square (1:1 ratio)
+├─ Text:      12px bold, center aligned
+├─ Events:    2x dots max (blue), +N overflow
+├─ Today:     Blue tint background + border
+└─ Click:     scale 0.95, y: -1px hover
+
+================================================================================
+                         INTERACTION STATES
+================================================================================
+
+DEFAULT STATE:
+  - Normal colors, no effects
+  - Ready for interaction
+
+HOVER STATE:
+  - Background lightens slightly
+  - Shadow increases (hover:shadow-md)
+  - Y coordinate rises (whileHover={{ y: -2 }})
+  - Duration: 200ms easeOut
+
+ACTIVE/PRESS STATE:
+  - Scale reduces (scale: 0.98 or 0.95)
+  - No bg change needed
+  - Quick feedback (100ms)
+  - Haptic if available (mobile)
+
+DONE/COMPLETED STATE:
+  - Strikethrough text
+  - Color fades (text-zinc-400)
+  - Opacity drops (~60%)
+  - Indicates "archived" state
+
+OVERDUE/ERROR STATE:
+  - Red text color
+  - Red border highlight
+  - Pulse animation (optional)
+  - Draws attention to action needed
+
+SELECTED/ACTIVE TAB STATE:
+  - Blue background tint
+  - White/blue text
+  - Shadow/glow effect
+  - Bold font weight
+
+================================================================================
+                         ANIMATIONS & TIMING
+================================================================================
+
+Page Transition (Route Change):
+  Duration:  180ms
+  Easing:    easeOut
+  Effect:    Fade in (0→1) + Slide up (y: 8→0)
+  Curve:     Ease out for snappy feel
+
+Checkbox Toggle:
+  Duration:  300ms
+  Easing:    easeOut
+  Effect:    Scale bounce + color change
+  Path:      scale 1→0.95→1 on check
+
+Card Hover:
+  Duration:  200ms
+  Easing:    easeOut
+  Effect:    Y lift + shadow grow
+  Motion:    y: 0→-2 (subtle)
+
+FAB Press:
+  Duration:  100ms
+  Easing:    easeOut
+  Effect:    Quick scale down
+  Feedback:  Visual + haptic
+
+Progress Ring:
+  Duration:  500ms
+  Easing:    easeOut
+  Effect:    Stroke dasharray animate
+  Loop:      Single fill animation
+
+List Item Entrance:
+  Duration:  200ms
+  Easing:    easeOut
+  Effect:    Fade in + slide from side
+  Path:      opacity 0→1, x: -8→0
+
+================================================================================
+                         DARK MODE DETAILS
+================================================================================
+
+Implementation: Tailwind 'dark:' prefix + Zustand store
+
+Toggle Flow:
+  1. User clicks dark mode in Settings.jsx
+  2. Store updates darkMode boolean
+  3. App.jsx applies 'dark' class to <html>
+  4. Tailwind applies dark: styles
+  5. Persists to localStorage (Zustand)
+
+Color Mapping:
+  All colors have dark: equivalent
+  Use custom values in [] for non-standard colors
+  Example: dark:bg-[#161B27]
+
+Contrast Requirements:
+  Text vs Background: WCAG AA minimum
+  Dark text on light: OK
+  Light text on dark: OK with care
+  Avoid low-contrast combos
+
+Inner Glow (Optional):
+  Dark mode cards can have subtle inset highlight
+  Effect: inset 0 1px 0 0 rgba(255,255,255,0.1)
+  Creates depth without harsh borders
+
+================================================================================
+                          FILES CREATED
+================================================================================
+
+1. UI_DESIGN_SPEC.md (9.6K)
+   └─ Complete specifications with code samples
+      • Color tokens with CSS variables
+      • Component detailed specs
+      • Typography scale
+      • Interaction states
+      • Animations
+      • Dark mode implementation
+      • Responsive design guide
+
+2. COMPONENT_EXAMPLES.jsx (13K)
+   └─ Production-ready, copy-paste components
+      • TaskItem (checkbox + priority pill)
+      • AppointmentCard (gradient + icons)
+      • HabitRow (progress ring alignment)
+      • StatCard (finance metrics)
+      • PillTab (filter buttons)
+      • FAB (action button)
+      • CalendarDayCell (calendar grid)
+      • ProgressRing (SVG indicator)
+
+3. DESIGN_QUICK_REFERENCE.md (7.2K)
+   └─ Quick lookup cheat sheet
+      • Color codes (hex)
+      • Tailwind class patterns
+      • Component quick styles
+      • Animation specs
+      • State styling
+      • Common patterns
+
+4. IMPLEMENTATION_CHECKLIST.md (8.9K)
+   └─ Step-by-step 6-phase plan
+      • Phase 1: Foundation (colors)
+      • Phase 2: Components
+      • Phase 3: Animations
+      • Phase 4: Pages
+      • Phase 5: Polish
+      • Phase 6: Advanced
+      • Testing checklist
+      • Time estimates
+
+5. TAILWIND_CONFIG.js (1.1K)
+   └─ Optional configuration extensions
+      • Color token definitions
+      • Animation utilities
+      • Box shadow enhancements
+      • Border radius aliases
+
+6. DESIGN_README.md (8.1K)
+   └─ Overview and navigation guide
+      • Quick start
+      • Design highlights
+      • File structure
+      • Priority order
+      • Testing guide
+      • FAQ
+
+7. DESIGN_SYSTEM_OVERVIEW.txt (this file)
+   └─ Executive summary and reference
+
+================================================================================
+                         IMPLEMENTATION ROADMAP
+================================================================================
+
+ESTIMATED TIME: ~11 hours total
+
+Phase 1: Foundation (1 hour)
+  ✓ Add color tokens to index.css
+  ✓ Apply dark: classes to App.jsx
+  ✓ Test dark mode toggle
+
+Phase 2: Components (3 hours)
+  ✓ Update checkboxes (rounded-none)
+  ✓ Add priority pills to tasks
+  ✓ Style cards (border + gradient)
+  ✓ FAB styling in BottomNav
+
+Phase 3: Animations (1.5 hours)
+  ✓ Wrap components with motion.div
+  ✓ Add tap feedback to buttons
+  ✓ Add hover states
+  ✓ Verify smooth transitions
+
+Phase 4: Pages (4 hours)
+  ✓ Update Home.jsx
+  ✓ Update Tasks.jsx
+  ✓ Update Finance.jsx
+  ✓ Update Her.jsx
+  ✓ Update Settings.jsx
+
+Phase 5: Polish (2 hours)
+  ✓ Dark mode thorough testing
+  ✓ Responsive testing
+  ✓ Performance optimization
+  ✓ Accessibility review
+
+Phase 6: Advanced (2 hours, optional)
+  ✓ Custom theming system
+  ✓ Advanced animations
+  ✓ Micro-interactions
+  ✓ Extra refinements
+
+================================================================================
+                         KEY SUCCESS METRICS
+================================================================================
+
+Visual:
+  ✓ Colors match design spec exactly
+  ✓ Typography hierarchy is clear
+  ✓ Cards have proper depth/shadow
+  ✓ All borders visible in both modes
+  ✓ FAB centered and prominent
+
+Functional:
+  ✓ All buttons responsive (tap feedback)
+  ✓ Dark mode toggle works
+  ✓ Animations smooth (60fps)
+  ✓ No layout shifts during animation
+  ✓ Safe area notch supported
+
+Performance:
+  ✓ Page transitions under 200ms
+  ✓ No jank on scroll
+  ✓ Bundle size unchanged
+  ✓ Smooth 60fps animations
+  ✓ Touch response instant
+
+Accessibility:
+  ✓ Touch targets >= 44px
+  ✓ Color contrast WCAG AA
+  ✓ Text readable in both modes
+  ✓ Keyboard navigation works
+  ✓ Icons have aria-labels
+
+================================================================================
+                            DESIGN INSPIRATION
+================================================================================
+
+LifeFlow:
+  → Dark navy background (#0B0F14)
+  → Gradient card backgrounds
+  → Teal/purple accent colors
+  → Premium spacing and layout
+
+Things 3:
+  → Large blue FAB button
+  → Square (not rounded) checkboxes
+  → Minimal typography hierarchy
+  → Clean, focused interface
+
+Fantastical:
+  → Appointment card styling
+  → Calendar event display
+  → Time/location icons
+  → Event importance indicator
+
+Notion:
+  → Dark backgrounds for focus
+  → Subtle borders and depth
+  → Customizable color system
+  → Professional aesthetic
+
+================================================================================
+                          GETTING STARTED
+================================================================================
+
+STEP 1: Read the Docs
+  • Start with DESIGN_README.md (overview)
+  • Read UI_DESIGN_SPEC.md (complete spec)
+  • Skim DESIGN_QUICK_REFERENCE.md (quick lookup)
+
+STEP 2: Set Up Colors
+  • Open src/index.css
+  • Add dark mode color tokens
+  • Apply dark: classes to App.jsx background
+
+STEP 3: Follow the Checklist
+  • Open IMPLEMENTATION_CHECKLIST.md
+  • Start with Phase 1 (foundation)
+  • Move through phases sequentially
+  • Check off items as completed
+
+STEP 4: Copy Components
+  • Open COMPONENT_EXAMPLES.jsx
+  • Copy TaskItem, AppointmentCard, etc.
+  • Paste into respective page files
+  • Customize as needed
+
+STEP 5: Test Thoroughly
+  • Toggle dark mode in Settings
+  • Test responsive on mobile (375px+)
+  • Verify animations are smooth
+  • Check accessibility (contrast, touch targets)
+
+STEP 6: Deploy & Refine
+  • Deploy to production
+  • Gather user feedback
+  • Iterate on Phase 6 (advanced features)
+  • Monitor performance metrics
+
+================================================================================
+                           QUICK REFERENCE
+================================================================================
+
+Most Used Tailwind Classes:
+  Cards:      bg-white dark:bg-[#161B27] rounded-lg border border-zinc-200/50
+  Hover:      hover:bg-zinc-50 dark:hover:bg-[#1F2433]
+  Text:       text-zinc-900 dark:text-white
+  Checkbox:   w-5 h-5 rounded-none border-2 checked:bg-blue-500
+  Pills:      bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-300
+  FAB:        w-14 h-14 rounded-full bg-blue-500 shadow-lg shadow-blue-500/50
+
+Animation Template:
+  import { motion } from 'framer-motion'
+  <motion.div
+    initial={{ opacity: 0, y: 8 }}
+    animate={{ opacity: 1, y: 0 }}
+    whileHover={{ y: -2 }}
+    whileTap={{ scale: 0.95 }}
+    transition={{ duration: 0.18, ease: 'easeOut' }}
+  >
+
+Color Palette (Copy to Design Tools):
+  Dark Navy:     #0B0F14
+  Dark Card:     #161B27
+  Dark Hover:    #1F2433
+  Primary Blue:  #2563EB
+  Teal:          #14B8A6
+  Purple:        #8B5CF6
+  Red:           #EF4444
+  Amber:         #F59E0B
+  Green:         #10B981
+
+================================================================================
+                         COMMON QUESTIONS
+================================================================================
+
+Q: Where do I start?
+A: Read DESIGN_README.md first, then follow IMPLEMENTATION_CHECKLIST.md Phase 1.
+
+Q: Do I need to install anything new?
+A: No. Tailwind, Framer Motion, and Lucide React are already in package.json.
+
+Q: How do I implement dark mode?
+A: Add dark: prefix to all color classes. Toggle via Settings.jsx store.
+
+Q: Why square checkboxes?
+A: Modern aesthetic. Matches Things 3. More premium than rounded.
+
+Q: How long will this take?
+A: ~11 hours for complete redesign. Can be done incrementally (Phase 1 = 1hr).
+
+Q: Can I customize colors?
+A: Yes. Edit TAILWIND_CONFIG.js or CSS variables in index.css.
+
+Q: Will this affect performance?
+A: No. Uses GPU-accelerated animations (transform). No layout shifts.
+
+Q: How do I test dark mode?
+A: Toggle in Settings.jsx. Adjusts darkMode in Zustand store.
+
+Q: Are there components I can copy?
+A: Yes. COMPONENT_EXAMPLES.jsx has 8 production-ready components.
+
+================================================================================
+
+                    DESIGN SYSTEM v1.0 - READY TO IMPLEMENT
+
+                        Created: May 2026
+                        Status: Production Ready
+                        Compatibility: React 19, Tailwind 4.3, Framer Motion 12
+
+================================================================================

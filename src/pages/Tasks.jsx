@@ -273,16 +273,19 @@ function TaskItem({ task, onToggle, onEdit, onDelete, onReschedule, showDate = f
           : 'bg-white dark:bg-zinc-900 ring-zinc-200/60 dark:ring-white/[0.08]'
       }`}
     >
-      {/* Checkbox */}
+      {/* Square checkbox */}
       <button
         onClick={() => onToggle(task.id)}
         aria-label={task.done ? 'Mark incomplete' : 'Mark complete'}
-        className="shrink-0 focus:outline-none focus:ring-2 focus:ring-blue-500/70 rounded-full"
+        className={`w-5 h-5 rounded-md shrink-0 border-2 flex items-center justify-center transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/70 ${
+          task.done
+            ? 'bg-emerald-500 border-emerald-500'
+            : overdue
+              ? 'border-rose-400 dark:border-rose-600'
+              : 'border-zinc-300 dark:border-zinc-600 hover:border-blue-400'
+        }`}
       >
-        {task.done
-          ? <CheckCircle2 size={22} className="text-emerald-500" />
-          : <Circle size={22} className={overdue ? 'text-rose-300 dark:text-rose-600' : 'text-zinc-300 dark:text-zinc-600'} />
-        }
+        {task.done && <Check size={12} className="text-white" strokeWidth={3} />}
       </button>
 
       {/* Text + meta */}
@@ -290,10 +293,10 @@ function TaskItem({ task, onToggle, onEdit, onDelete, onReschedule, showDate = f
         className="flex-1 min-w-0 cursor-pointer"
         onClick={() => setShowActions((v) => !v)}
       >
-        <p className={`text-sm leading-snug ${task.done ? 'line-through text-zinc-400' : 'text-zinc-800 dark:text-zinc-100'}`}>
+        <p className={`text-sm leading-snug ${task.done ? 'line-through text-zinc-400 dark:text-zinc-600' : 'text-zinc-800 dark:text-zinc-100'}`}>
           {task.text}
         </p>
-        <div className="flex items-center gap-2 mt-0.5">
+        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
           {task.dueTime && (
             <span className="text-[11px] text-zinc-400 flex items-center gap-0.5">
               <Clock size={10} />{task.dueTime}
@@ -306,9 +309,15 @@ function TaskItem({ task, onToggle, onEdit, onDelete, onReschedule, showDate = f
         </div>
       </div>
 
-      {/* Priority dot */}
-      {task.priority && (
-        <div className={`w-2 h-2 rounded-full shrink-0 ${PRIORITY_DOT[task.priority] ?? 'bg-zinc-300'}`} aria-label={`Priority: ${PRIORITY_LABEL[task.priority]}`} />
+      {/* Priority pill badge (replaces tiny dot) */}
+      {task.priority && !task.done && (
+        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
+          task.priority === 'high' ? 'bg-rose-100 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400' :
+          task.priority === 'med'  ? 'bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400' :
+                                     'bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400'
+        }`} aria-label={`Priority: ${PRIORITY_LABEL[task.priority]}`}>
+          {PRIORITY_LABEL[task.priority]}
+        </span>
       )}
 
       {/* Edit icon (shown on row tap) */}
@@ -457,14 +466,14 @@ function DailyAgenda({ date, onEditApt, onDeleteApt, onEditTask, onToggleTask, o
 }
 
 // ─── Task Modal (Add / Edit) ──────────────────────────────────────────────────
-function TaskModal({ open, onClose, initial = null, onSave }) {
+function TaskModal({ open, onClose, initial = null, onSave, defaultDate = null }) {
   const today = todayStr()
-  const blank = { text: '', notes: '', date: today, dueTime: '', priority: 'med', done: false }
+  const blank = { text: '', notes: '', date: defaultDate || today, dueTime: '', priority: 'med', done: false }
   const [form, setForm] = useState(blank)
 
   useEffect(() => {
-    if (open) setForm(initial ? { ...blank, ...initial } : blank)
-  }, [open, initial])
+    if (open) setForm(initial ? { ...blank, ...initial } : { ...blank, date: defaultDate || today })
+  }, [open, initial, defaultDate])
 
   const f = (k) => (e) => setForm((prev) => ({ ...prev, [k]: e.target.value }))
 
@@ -534,17 +543,17 @@ function TaskModal({ open, onClose, initial = null, onSave }) {
 }
 
 // ─── Appointment Modal (Add / Edit) ──────────────────────────────────────────
-function AppointmentModal({ open, onClose, initial = null, onSave }) {
+function AppointmentModal({ open, onClose, initial = null, onSave, defaultDate = null }) {
   const today = todayStr()
   const blank = {
-    title: '', notes: '', date: today, startTime: '', endTime: '',
+    title: '', notes: '', date: defaultDate || today, startTime: '', endTime: '',
     location: '', meetingLink: '', important: false, reminder: 'none',
   }
   const [form, setForm] = useState(blank)
 
   useEffect(() => {
-    if (open) setForm(initial ? { ...blank, ...initial } : blank)
-  }, [open, initial])
+    if (open) setForm(initial ? { ...blank, ...initial } : { ...blank, date: defaultDate || today })
+  }, [open, initial, defaultDate])
 
   const f = (k) => (e) => setForm((prev) => ({ ...prev, [k]: e.target.value }))
 
@@ -968,8 +977,8 @@ const WEEKDAY_LABELS = ['S','M','T','W','T','F','S']
 
 function CalendarTab() {
   const {
-    dailyTasks, updateDailyTask, toggleDailyTask, deleteDailyTask,
-    appointments, deleteAppointment, updateAppointment,
+    dailyTasks, addDailyTask, updateDailyTask, toggleDailyTask, deleteDailyTask,
+    appointments, addAppointment, deleteAppointment, updateAppointment,
   } = useStore()
 
   const [cursor,    setCursor]    = useState(new Date())       // month view
@@ -1099,17 +1108,32 @@ function CalendarTab() {
         })}
       </div>
 
-      {/* Selected date agenda */}
+      {/* Selected date header + Add buttons */}
       <div>
-        <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center justify-between mb-3">
           <p className="text-sm font-bold text-zinc-700 dark:text-zinc-200">
             {isToday(selected) ? 'Today' : isTomorrow(selected) ? 'Tomorrow' : format(selected, 'EEE, MMM d')}
           </p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => { setEditTask(null); setTaskModal(true) }}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-blue-500 text-white text-xs font-bold shadow-sm shadow-blue-500/30 hover:bg-blue-600 active:scale-95 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/70"
+            >
+              <Plus size={12} /> Task
+            </button>
+            <button
+              onClick={() => { setEditApt(null); setAptModal(true) }}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-teal-500 text-white text-xs font-bold shadow-sm shadow-teal-500/30 hover:bg-teal-600 active:scale-95 transition-all focus:outline-none focus:ring-2 focus:ring-teal-500/70"
+            >
+              <Calendar size={12} /> Appt
+            </button>
+          </div>
         </div>
 
         {!selApts.length && !selTasks.length && (
-          <div className="text-center py-8 text-zinc-400 dark:text-zinc-600 text-sm">
-            Nothing scheduled
+          <div className="text-center py-8">
+            <p className="text-zinc-400 dark:text-zinc-600 text-sm mb-3">Nothing scheduled</p>
+            <p className="text-xs text-zinc-300 dark:text-zinc-700">Tap + Task or + Appt above to add something</p>
           </div>
         )}
 
@@ -1132,13 +1156,21 @@ function CalendarTab() {
         open={taskModal}
         onClose={() => { setTaskModal(false); setEditTask(null) }}
         initial={editTask}
-        onSave={(form) => { if (editTask) updateDailyTask(editTask.id, form) }}
+        defaultDate={selStr}
+        onSave={(form) => {
+          if (editTask) updateDailyTask(editTask.id, form)
+          else addDailyTask(form)
+        }}
       />
       <AppointmentModal
         open={aptModal}
         onClose={() => { setAptModal(false); setEditApt(null) }}
         initial={editApt}
-        onSave={(form) => { if (editApt) updateAppointment(editApt.id, form) }}
+        defaultDate={selStr}
+        onSave={(form) => {
+          if (editApt) updateAppointment(editApt.id, form)
+          else addAppointment(form)
+        }}
       />
       <RescheduleModal
         open={reschedModal}
@@ -1190,43 +1222,62 @@ function HabitsTab() {
 
       {habits.length === 0 && <EmptyState icon={Flame} text="Add habits to track your daily routine" />}
 
-      <div className="grid grid-cols-2 gap-3">
+      {/* List view with progress rings — inspired by Things 3 / LifeFlow */}
+      <div className="space-y-2">
         {habitsWithState.map((h) => {
           const c = HABIT_COLORS[h.color] ?? HABIT_COLORS.blue
+          const pct = h.target > 0 ? Math.min(h.count / h.target, 1) : 0
+          const r = 18; const circ = 2 * Math.PI * r
+          const RING_COLOR = { blue: '#3b82f6', green: '#10b981', cyan: '#06b6d4', purple: '#8b5cf6', amber: '#f59e0b', red: '#f43f5e' }
+          const ringColor = RING_COLOR[h.color] ?? '#3b82f6'
           return (
             <div
               key={h.id}
-              className={`relative rounded-2xl p-4 ring-1 transition-all overflow-hidden ${
-                h.done ? `${c.card} ${c.ring}` : 'bg-white dark:bg-zinc-900 ring-zinc-200/60 dark:ring-white/[0.08]'
+              className={`flex items-center gap-3 px-4 py-3.5 rounded-2xl ring-1 transition-all ${
+                h.done
+                  ? `${c.card} ${c.ring}`
+                  : 'bg-white dark:bg-[#161B27] ring-zinc-200/60 dark:ring-white/[0.07]'
               }`}
             >
+              <span className="text-2xl shrink-0">{h.emoji}</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-100 leading-tight">{h.name}</p>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <p className={`text-xs font-medium ${h.done ? c.text : 'text-zinc-400'}`}>
+                    {h.done ? '✓ Done' : `${h.count} of ${h.target} today`}
+                  </p>
+                  {h.streak > 0 && (
+                    <span className={`text-[10px] font-bold flex items-center gap-0.5 ${c.text}`}>
+                      <Flame size={10} />{h.streak}d
+                    </span>
+                  )}
+                </div>
+              </div>
+              {/* SVG circular progress ring */}
+              <button
+                onClick={() => logHabit(h.id)}
+                aria-label={`Log ${h.name}`}
+                disabled={h.done}
+                className="shrink-0 relative focus:outline-none focus:ring-2 focus:ring-blue-500/70 rounded-full"
+              >
+                <svg width={44} height={44} className="-rotate-90">
+                  <circle cx={22} cy={22} r={r} fill="none" strokeWidth={3.5}
+                    stroke="currentColor" className="text-zinc-100 dark:text-zinc-800" />
+                  <circle cx={22} cy={22} r={r} fill="none" strokeWidth={3.5}
+                    stroke={ringColor} strokeLinecap="round"
+                    strokeDasharray={`${circ * pct} ${circ}`}
+                    style={{ transition: 'stroke-dasharray 0.4s ease' }} />
+                </svg>
+                <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-zinc-600 dark:text-zinc-300">
+                  {h.done ? '✓' : h.count}
+                </span>
+              </button>
               <button
                 onClick={() => openEdit(h)}
                 aria-label={`Edit ${h.name}`}
-                className="absolute top-2.5 right-2.5 p-1 text-zinc-300 dark:text-zinc-600 hover:text-blue-400 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/70 rounded"
+                className="p-1.5 text-zinc-300 dark:text-zinc-600 hover:text-blue-400 transition-colors shrink-0 focus:outline-none focus:ring-2 focus:ring-blue-500/70 rounded"
               >
-                <Pencil size={11} />
-              </button>
-              {h.streak > 0 && (
-                <div className={`absolute top-2.5 left-2.5 flex items-center gap-0.5 text-[10px] font-bold ${c.text}`}>
-                  <Flame size={10} />{h.streak}
-                </div>
-              )}
-              <button
-                className="w-full text-left focus:outline-none focus:ring-2 focus:ring-blue-500/70 rounded-xl"
-                aria-label={`Log ${h.name} — ${h.count} of ${h.target} done today`}
-                onClick={() => logHabit(h.id)}
-              >
-                <p className="text-3xl mt-3 mb-2">{h.emoji}</p>
-                <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-100 leading-tight pr-4 truncate">{h.name}</p>
-                <div className="flex gap-1 mt-2 flex-wrap">
-                  {Array.from({ length: h.target }).map((_, i) => (
-                    <div key={i} className={`w-2.5 h-2.5 rounded-full shrink-0 ${i < h.count ? c.dot : 'bg-zinc-200 dark:bg-zinc-700'}`} />
-                  ))}
-                </div>
-                <p className={`text-xs mt-1.5 font-semibold ${h.done ? c.text : 'text-zinc-400'}`}>
-                  {h.done ? '✓ Done' : `${h.count}/${h.target}`}
-                </p>
+                <Pencil size={13} />
               </button>
             </div>
           )
@@ -1940,6 +1991,65 @@ function ProjectFilesTab({ projectId }) {
   )
 }
 
+// ─── FAB (Floating Action Button) ────────────────────────────────────────────
+function FAB() {
+  const { addDailyTask, addAppointment } = useStore()
+  const [open, setOpen]       = useState(false)
+  const [taskOpen, setTaskOpen]   = useState(false)
+  const [aptOpen, setAptOpen]     = useState(false)
+
+  return (
+    <>
+      {/* Fixed blue circle button above bottom nav */}
+      <motion.button
+        onClick={() => setOpen(true)}
+        whileTap={{ scale: 0.9 }}
+        aria-label="Quick add task or appointment"
+        className="fixed bottom-[88px] right-4 w-14 h-14 bg-blue-500 rounded-full shadow-xl shadow-blue-500/40 flex items-center justify-center text-white z-40 hover:bg-blue-600 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/70 focus:ring-offset-2"
+      >
+        <Plus size={26} strokeWidth={2.5} />
+      </motion.button>
+
+      {/* FAB choice sheet */}
+      <Modal open={open} onClose={() => setOpen(false)} title="Quick Add">
+        <div className="grid grid-cols-2 gap-3 pb-2">
+          <button
+            onClick={() => { setOpen(false); setTimeout(() => setTaskOpen(true), 150) }}
+            className="flex flex-col items-center gap-3 py-6 rounded-2xl bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-500/20 transition-colors active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-500/70"
+          >
+            <div className="w-12 h-12 rounded-2xl bg-blue-500 flex items-center justify-center shadow-lg shadow-blue-500/30">
+              <Check size={22} className="text-white" strokeWidth={2.5} />
+            </div>
+            <span className="text-sm font-bold">Task</span>
+          </button>
+          <button
+            onClick={() => { setOpen(false); setTimeout(() => setAptOpen(true), 150) }}
+            className="flex flex-col items-center gap-3 py-6 rounded-2xl bg-teal-50 dark:bg-teal-500/10 text-teal-600 dark:text-teal-400 hover:bg-teal-100 dark:hover:bg-teal-500/20 transition-colors active:scale-95 focus:outline-none focus:ring-2 focus:ring-teal-500/70"
+          >
+            <div className="w-12 h-12 rounded-2xl bg-teal-500 flex items-center justify-center shadow-lg shadow-teal-500/30">
+              <Calendar size={22} className="text-white" />
+            </div>
+            <span className="text-sm font-bold">Appointment</span>
+          </button>
+        </div>
+      </Modal>
+
+      <TaskModal
+        open={taskOpen}
+        onClose={() => setTaskOpen(false)}
+        initial={null}
+        onSave={(form) => addDailyTask(form)}
+      />
+      <AppointmentModal
+        open={aptOpen}
+        onClose={() => setAptOpen(false)}
+        initial={null}
+        onSave={(form) => addAppointment(form)}
+      />
+    </>
+  )
+}
+
 // ─── Main export ──────────────────────────────────────────────────────────────
 export default function Tasks() {
   const [tab, setTab] = useState('today')
@@ -1955,6 +2065,8 @@ export default function Tasks() {
       {tab === 'habits'   && <HabitsTab />}
       {tab === 'office'   && <KanbanTab category="office" />}
       {tab === 'projects' && <ProjectsTab />}
+
+      <FAB />
     </div>
   )
 }
