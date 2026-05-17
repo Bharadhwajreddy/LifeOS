@@ -376,3 +376,105 @@
 .progress-ring-circle {
   animation: ring-fill 0.8s ease-out forwards;
 }
+
+/* ── Global animated backgrounds ────────────────────────────── */
+
+/* Rotating gradient border for avatar/card */
+@keyframes spin-gradient {
+  0%   { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+.spin-gradient {
+  animation: spin-gradient 3s linear infinite;
+}
+
+/* Floating gentle bob */
+@keyframes float-bob {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-8px); }
+}
+.float-bob {
+  animation: float-bob 4s ease-in-out infinite;
+}
+
+/* Pulse ring for status dots */
+@keyframes pulse-ring {
+  0%   { transform: scale(1); opacity: 0.8; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+.pulse-ring::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: currentColor;
+  animation: pulse-ring 1.5s ease-out infinite;
+}
+
+/* Shimmer loading effect */
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.shimmer {
+  background: linear-gradient(90deg, var(--surface-2) 25%, var(--surface-3) 50%, var(--surface-2) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* Gradient text animation for display headings */
+@keyframes gradient-text-shift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.animated-gradient-text {
+  background: linear-gradient(90deg, var(--accent), var(--accent-2), var(--lavender), var(--accent));
+  background-size: 300% 300%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gradient-text-shift 4s ease infinite;
+}
+
+/* Neon glow pulse for neon theme elements */
+[data-theme="neon"] .neon-pulse {
+  animation: neon-glow 2s ease-in-out infinite alternate;
+}
+@keyframes neon-glow {
+  from { box-shadow: 0 0 8px rgba(68,136,255,0.4), 0 0 20px rgba(68,136,255,0.2); }
+  to   { box-shadow: 0 0 16px rgba(68,136,255,0.8), 0 0 40px rgba(68,136,255,0.4), 0 0 60px rgba(0,255,179,0.2); }
+}
+
+/* Aurora soft glow for aurora theme */
+[data-theme="aurora"] .aurora-glow {
+  animation: aurora-pulse 3s ease-in-out infinite;
+}
+@keyframes aurora-pulse {
+  0%, 100% { box-shadow: 0 0 20px rgba(79,124,255,0.2); }
+  50%       { box-shadow: 0 0 40px rgba(79,124,255,0.4), 0 0 60px rgba(123,199,190,0.2); }
+}
+
+/* Animated orbs for glass theme */
+.lf-app[data-theme="glass"]::before {
+  content: '';
+  position: fixed;
+  width: 300px; height: 300px;
+  background: radial-gradient(circle, rgba(107,143,255,0.15) 0%, transparent 70%);
+  border-radius: 50%;
+  top: -100px; right: -50px;
+  animation: float-bob 8s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+.lf-app[data-theme="glass"]::after {
+  content: '';
+  position: fixed;
+  width: 250px; height: 250px;
+  background: radial-gradient(circle, rgba(94,234,212,0.1) 0%, transparent 70%);
+  border-radius: 50%;
+  bottom: 100px; left: -80px;
+  animation: float-bob 10s ease-in-out infinite reverse;
+  pointer-events: none;
+  z-index: 0;
+}

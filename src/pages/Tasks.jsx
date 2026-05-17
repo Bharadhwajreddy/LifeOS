@@ -1036,77 +1036,170 @@ function CalendarTab() {
     [dailyTasks, selStr]
   )
 
+  // Enhanced dot color logic: green=all done, yellow=partial, red=has overdue
+  const taskStatusMap = useMemo(() => {
+    const map = {}
+    dailyTasks.forEach((t) => {
+      if (!map[t.date]) map[t.date] = { total: 0, done: 0, overdue: 0 }
+      map[t.date].total++
+      if (t.done) map[t.date].done++
+      if (isOverdueTask(t)) map[t.date].overdue++
+    })
+    return map
+  }, [dailyTasks])
+
+  const monthKey = format(cursor, 'yyyy-MM')
+
   return (
     <div className="space-y-4">
-      {/* Month nav */}
-      <div className="flex items-center justify-between">
-        <button
+      {/* Month nav — large month name */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 0' }}>
+        <motion.button
+          whileTap={{ scale: 0.88 }}
           onClick={prevMonth}
           aria-label="Previous month"
-          className="p-2 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/70"
+          style={{
+            width: 38, height: 38,
+            borderRadius: '50%',
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: 'pointer',
+            color: 'var(--text-2)',
+          }}
         >
-          <ChevronDown size={18} className="rotate-90" />
-        </button>
-        <p className="text-base font-bold text-zinc-800 dark:text-zinc-100">
-          {format(cursor, 'MMMM yyyy')}
-        </p>
-        <button
+          <ChevronDown size={18} style={{ transform: 'rotate(90deg)' }} />
+        </motion.button>
+
+        <div style={{ textAlign: 'center' }}>
+          <p style={{ fontSize: 22, fontWeight: 800, color: 'var(--text)', lineHeight: 1.1, letterSpacing: '-0.5px' }}>
+            {format(cursor, 'MMMM')}
+          </p>
+          <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-3)', marginTop: 1 }}>
+            {format(cursor, 'yyyy')}
+          </p>
+        </div>
+
+        <motion.button
+          whileTap={{ scale: 0.88 }}
           onClick={nextMonth}
           aria-label="Next month"
-          className="p-2 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/70"
+          style={{
+            width: 38, height: 38,
+            borderRadius: '50%',
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: 'pointer',
+            color: 'var(--text-2)',
+          }}
         >
-          <ChevronDown size={18} className="-rotate-90" />
-        </button>
+          <ChevronDown size={18} style={{ transform: 'rotate(-90deg)' }} />
+        </motion.button>
       </div>
 
       {/* Weekday headers */}
       <div className="grid grid-cols-7 gap-0">
         {WEEKDAY_LABELS.map((l, i) => (
-          <div key={i} className="text-center text-[11px] font-bold text-zinc-400 dark:text-zinc-600 py-1">{l}</div>
+          <div key={i} style={{ textAlign: 'center', fontSize: 11, fontWeight: 700, color: 'var(--text-3)', paddingTop: 4, paddingBottom: 4 }}>{l}</div>
         ))}
       </div>
 
-      {/* Calendar grid */}
-      <div className="grid grid-cols-7 gap-0">
-        {Array.from({ length: startOffset }).map((_, i) => <div key={`pad-${i}`} />)}
-        {days.map((day) => {
-          const dStr    = format(day, 'yyyy-MM-dd')
-          const isToday_ = isToday(day)
-          const isSel   = isSameDay(day, selected)
-          const dots    = dotsMap[dStr]
-          return (
-            <button
-              key={dStr}
-              onClick={() => setSelected(day)}
-              aria-label={format(day, 'MMMM d, yyyy')}
-              className={`flex flex-col items-center py-1.5 rounded-xl transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/70 ${
-                isSel
-                  ? 'bg-blue-500'
-                  : isToday_
-                  ? 'bg-blue-50 dark:bg-blue-500/10'
-                  : 'hover:bg-zinc-100 dark:hover:bg-zinc-800'
-              }`}
-            >
-              <span className={`text-sm font-semibold leading-none ${
-                isSel
-                  ? 'text-white'
-                  : isToday_
-                  ? 'text-blue-600 dark:text-blue-400'
-                  : 'text-zinc-700 dark:text-zinc-300'
-              }`}>
-                {format(day, 'd')}
-              </span>
-              {/* Dots row */}
-              {dots && (
-                <div className="flex gap-0.5 mt-1">
-                  {dots.tasks > 0 && <div className={`w-1 h-1 rounded-full ${isSel ? 'bg-white/70' : 'bg-blue-400'}`} />}
-                  {dots.apts  > 0 && <div className={`w-1 h-1 rounded-full ${isSel ? 'bg-white/70' : 'bg-teal-400'}`} />}
+      {/* Calendar grid with smooth month transition */}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={monthKey}
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -20 }}
+          transition={{ duration: 0.18, ease: 'easeOut' }}
+          className="grid grid-cols-7 gap-0"
+        >
+          {Array.from({ length: startOffset }).map((_, i) => <div key={`pad-${i}`} />)}
+          {days.map((day) => {
+            const dStr     = format(day, 'yyyy-MM-dd')
+            const isToday_ = isToday(day)
+            const isSel    = isSameDay(day, selected)
+            const dots     = dotsMap[dStr]
+            const status   = taskStatusMap[dStr]
+
+            // Task dot color: green=all done, amber=partial, red=has overdue
+            let taskDotColor = 'var(--accent)'
+            if (status) {
+              if (status.overdue > 0) taskDotColor = 'var(--danger)'
+              else if (status.done === status.total) taskDotColor = 'var(--success)'
+              else taskDotColor = '#F59E0B'
+            }
+
+            const cellStyle = {
+              width: 36, height: 36,
+              borderRadius: '50%',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: isSel ? 'var(--accent)' : isToday_ ? 'var(--accent-soft)' : 'transparent',
+              color: isSel ? 'white' : isToday_ ? 'var(--accent)' : 'var(--text)',
+              fontWeight: isToday_ || isSel ? 700 : 400,
+              cursor: 'pointer',
+              transition: 'all 0.15s ease',
+              boxShadow: isSel ? '0 2px 10px color-mix(in srgb, var(--accent) 40%, transparent)' : 'none',
+              outline: isToday_ && !isSel ? '2px solid var(--accent)' : 'none',
+              outlineOffset: -2,
+              margin: '0 auto',
+            }
+
+            return (
+              <button
+                key={dStr}
+                onClick={() => setSelected(day)}
+                aria-label={format(day, 'MMMM d, yyyy')}
+                style={{
+                  display: 'flex', flexDirection: 'column', alignItems: 'center',
+                  paddingTop: 4, paddingBottom: 4, background: 'none', border: 'none',
+                  cursor: 'pointer',
+                  borderRadius: 12,
+                  transition: 'background 0.12s ease',
+                }}
+              >
+                <div style={cellStyle}>
+                  <span style={{ fontSize: 13, lineHeight: 1 }}>
+                    {format(day, 'd')}
+                  </span>
                 </div>
-              )}
-            </button>
-          )
-        })}
-      </div>
+
+                {/* Task count badge */}
+                {dots && dots.tasks > 0 && (
+                  <div style={{
+                    marginTop: 2,
+                    fontSize: 9,
+                    fontWeight: 700,
+                    lineHeight: 1,
+                    paddingInline: 4,
+                    paddingBlock: 1.5,
+                    borderRadius: 99,
+                    background: isSel ? 'rgba(255,255,255,0.25)' : taskDotColor,
+                    color: isSel ? 'white' : 'white',
+                    minWidth: 14,
+                    textAlign: 'center',
+                  }}>
+                    {dots.tasks}
+                  </div>
+                )}
+
+                {/* Dots row for apts when no tasks */}
+                {dots && dots.tasks === 0 && dots.apts > 0 && (
+                  <div style={{ display: 'flex', gap: 2, marginTop: 3 }}>
+                    <div style={{ width: 4, height: 4, borderRadius: '50%', background: isSel ? 'rgba(255,255,255,0.7)' : '#14B8A6' }} />
+                  </div>
+                )}
+
+                {/* Teal dot for apts alongside task badge */}
+                {dots && dots.tasks > 0 && dots.apts > 0 && (
+                  <div style={{ width: 4, height: 4, borderRadius: '50%', background: isSel ? 'rgba(255,255,255,0.7)' : '#14B8A6', marginTop: 1 }} />
+                )}
+              </button>
+            )
+          })}
+        </motion.div>
+      </AnimatePresence>
 
       {/* Selected date header + Add buttons */}
       <div>
