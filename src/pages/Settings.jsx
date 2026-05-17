@@ -3,7 +3,6 @@ import { Moon, Sun, Trash2, Plus, Pencil, Check, X } from 'lucide-react'
 import { useStore } from '../store'
 import { Card, Btn, Input, Select, SectionHeader } from '../components/UI'
 import Modal from '../components/Modal'
-import { THEMES } from '../lib/themes'
 
 function EditableItem({ name, onRename, onDelete, canDelete }) {
   const [editing, setEditing] = useState(false)
@@ -98,29 +97,63 @@ export default function Settings() {
         </Card>
       </section>
 
-      <section className="space-y-2">
+      <section className="space-y-3">
         <SectionHeader>Theme</SectionHeader>
-        <div className="grid grid-cols-5 gap-2">
-          {THEMES.map((th) => (
+        <div className="grid grid-cols-2 gap-3">
+          {[
+            { id: 'aurora', name: 'Aurora', subtitle: 'Light & Airy', emoji: '☀️',
+              colors: ['#4F7CFF','#7BC7BE','#FF8A6B'], bg: 'linear-gradient(135deg,#FAFAF7,#E6EDFF)' },
+            { id: 'glass', name: 'Glass', subtitle: 'Dark & Frosted', emoji: '🌙',
+              colors: ['#6B8FFF','#5EEAD4','#C4B5FD'], bg: 'linear-gradient(135deg,#07091A,#0C1027)' },
+            { id: 'paper', name: 'Paper', subtitle: 'Warm Editorial', emoji: '📜',
+              colors: ['#B8472A','#4A5D3A','#C9923D'], bg: 'linear-gradient(135deg,#F1EBDC,#E8DFCC)' },
+            { id: 'neon', name: 'Neon', subtitle: 'Bold & Electric', emoji: '⚡',
+              colors: ['#4488FF','#00FFB3','#AA88FF'], bg: 'linear-gradient(135deg,#08080F,#0E0E1A)' },
+          ].map((th) => (
             <button
               key={th.id}
               onClick={() => setTheme(th.id)}
-              className={`flex flex-col items-center gap-1.5 p-2 rounded-2xl border-2 transition-all active:scale-[0.96] ${
-                theme === th.id
-                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-500/10'
-                  : 'border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800/50'
-              }`}
+              style={{
+                background: th.bg,
+                border: theme === th.id ? '2px solid var(--accent)' : '2px solid transparent',
+                borderRadius: 16,
+                padding: 16,
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                transform: theme === th.id ? 'scale(1.02)' : 'scale(1)',
+                boxShadow: theme === th.id ? '0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent)' : 'none',
+              }}
+              className="active:scale-95 text-left"
             >
-              {/* Colour dots */}
-              <div className="flex gap-0.5">
-                {th.preview.map((c, i) => (
-                  <div key={i} className="w-3 h-3 rounded-full" style={{ backgroundColor: c }} />
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-lg">{th.emoji}</span>
+                {theme === th.id && (
+                  <div style={{
+                    width: 18, height: 18, borderRadius: '50%',
+                    background: 'var(--accent)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                      <path d="M1 4l2.5 2.5L9 1" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </div>
+                )}
+              </div>
+              <div className="flex gap-1.5 mb-2.5">
+                {th.colors.map((c, i) => (
+                  <div key={i} style={{ width: 18, height: 18, borderRadius: '50%', background: c,
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }} />
                 ))}
               </div>
-              <span className="text-[10px] font-bold text-zinc-600 dark:text-zinc-300 leading-none">{th.name}</span>
-              {theme === th.id && (
-                <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-              )}
+              <p style={{
+                fontWeight: 700, fontSize: 13,
+                color: th.id === 'glass' || th.id === 'neon' ? '#ECEEFF' : '#1B2030',
+                marginBottom: 2,
+              }}>{th.name}</p>
+              <p style={{
+                fontWeight: 500, fontSize: 11,
+                color: th.id === 'glass' || th.id === 'neon' ? 'rgba(236,238,255,0.6)' : 'rgba(27,32,48,0.5)',
+              }}>{th.subtitle}</p>
             </button>
           ))}
         </div>

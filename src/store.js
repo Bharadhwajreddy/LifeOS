@@ -18,7 +18,7 @@ export const useStore = create(
     (set, get) => ({
       name: 'Bharadhwaj',
       darkMode: true,
-      theme: 'ocean',
+      theme: 'glass',
       currency: '€',
 
       // ── Income sources ───────────────────────────────────────────────────────

@@ -2,7 +2,6 @@ import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useStore } from './store'
-import { getTheme } from './lib/themes'
 import BottomNav from './components/BottomNav'
 import Home from './pages/Home'
 import Tasks from './pages/Tasks'
@@ -13,10 +12,10 @@ import Settings from './pages/Settings'
 function PageWrapper({ children }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 8 }}
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.18, ease: 'easeOut' }}
+      exit={{ opacity: 0, y: -4 }}
+      transition={{ duration: 0.22, ease: [0.25, 0.46, 0.45, 0.94] }}
     >
       {children}
     </motion.div>
@@ -25,19 +24,21 @@ function PageWrapper({ children }) {
 
 function AppInner() {
   const location = useLocation()
-  const { darkMode, theme } = useStore()
-  const t = getTheme(theme)
+  const { theme } = useStore()
 
+  // Apply data-theme attribute + remove old dark class (themes handle it)
   useEffect(() => {
-    document.documentElement.classList.toggle('dark', darkMode)
-  }, [darkMode])
-
-  const bgStyle = darkMode
-    ? { background: t.darkBg }
-    : { background: 'linear-gradient(180deg, #FFFFFF 0%, #F7F8FA 100%)' }
+    const root = document.documentElement
+    // All 4 themes carry their own bg color — dark class no longer needed
+    root.setAttribute('data-theme', theme)
+    // Keep dark class for any residual tailwind dark: utilities
+    const isDark = theme === 'glass' || theme === 'neon'
+    root.classList.toggle('dark', isDark)
+  }, [theme])
 
   return (
-    <div className="min-h-screen transition-colors overflow-x-hidden" style={bgStyle}>
+    // lf-app picks up the data-theme attribute for CSS variable resolution
+    <div className="lf-app min-h-screen overflow-x-hidden transition-colors" data-theme={theme}>
       <main className="max-w-md mx-auto px-4 pt-6 pb-32">
         <AnimatePresence mode="wait">
           <Routes location={location} key={location.pathname}>

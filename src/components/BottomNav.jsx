@@ -1,7 +1,6 @@
 import { NavLink } from 'react-router-dom'
 import { Home, CheckSquare, Wallet, Heart, Settings } from 'lucide-react'
 import { useStore } from '../store'
-import { getTheme } from '../lib/themes'
 
 const tabs = [
   { to: '/', icon: Home, label: 'Home' },
@@ -12,27 +11,46 @@ const tabs = [
 ]
 
 export default function BottomNav() {
-  const { theme } = useStore()
-  const t = getTheme(theme)
-
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 px-4 pb-4" style={{ paddingBottom: 'max(16px, env(safe-area-inset-bottom))' }}>
-      <div className="bg-white/85 dark:bg-[#151C2A]/95 backdrop-blur-2xl rounded-[28px] border border-zinc-200/60 dark:border-white/[0.08] shadow-[0_8px_32px_rgba(15,23,42,0.12)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.5)] overflow-hidden">
+    <nav
+      className="fixed bottom-0 left-0 right-0 z-50 px-4"
+      style={{ paddingBottom: 'max(16px, env(safe-area-inset-bottom))' }}
+    >
+      <div style={{
+        background: 'var(--nav-bg)',
+        backdropFilter: 'var(--nav-blur, blur(20px))',
+        WebkitBackdropFilter: 'var(--nav-blur, blur(20px))',
+        borderRadius: 'var(--radius-xl, 28px)',
+        border: '1px solid var(--border)',
+        boxShadow: 'var(--shadow-md)',
+        overflow: 'clip',
+      }}>
         <div className="flex max-w-md mx-auto px-2">
           {tabs.map(({ to, icon: Icon, label }) => (
-            <NavLink
-              key={to}
-              to={to}
-              end={to === '/'}
-              className="flex-1"
-            >
+            <NavLink key={to} to={to} end={to === '/'} className="flex-1">
               {({ isActive }) => (
-                <div className="flex flex-col items-center gap-0.5 py-3 px-3">
-                  <div className={`p-1.5 rounded-xl transition-all duration-200 ${isActive ? t.navActiveBg : ''}`}>
-                    <Icon size={21} strokeWidth={isActive ? 2.2 : 1.75} className={isActive ? t.navActive : 'text-zinc-400 dark:text-zinc-500'} />
+                <div className="flex flex-col items-center gap-0.5 py-3 px-2">
+                  <div style={{
+                    padding: 6,
+                    borderRadius: 'var(--radius-sm)',
+                    background: isActive ? 'color-mix(in srgb, var(--accent) 12%, transparent)' : 'transparent',
+                    transition: 'all 0.2s ease',
+                  }}>
+                    <Icon
+                      size={21}
+                      strokeWidth={isActive ? 2.2 : 1.75}
+                      style={{ color: isActive ? 'var(--nav-active)' : 'var(--nav-inactive)' }}
+                    />
                   </div>
-                  <div className={`w-1 h-1 rounded-full transition-all ${isActive ? t.navDot : 'bg-transparent'}`} />
-                  <span className={`text-[10px] font-semibold ${isActive ? t.navActive : 'text-zinc-400 dark:text-zinc-500'}`}>{label}</span>
+                  <div style={{
+                    width: 4, height: 4, borderRadius: '50%',
+                    background: isActive ? 'var(--nav-indicator)' : 'transparent',
+                    transition: 'background 0.2s ease',
+                  }} />
+                  <span style={{
+                    fontSize: 10, fontWeight: 600,
+                    color: isActive ? 'var(--nav-active)' : 'var(--nav-inactive)',
+                  }}>{label}</span>
                 </div>
               )}
             </NavLink>

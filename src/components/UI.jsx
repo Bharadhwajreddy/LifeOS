@@ -1,24 +1,43 @@
 // Card
 export function Card({ children, className = '' }) {
   return (
-    <div className={`bg-white dark:bg-[#161B27] rounded-2xl shadow-sm dark:shadow-lg dark:shadow-black/30 ring-1 ring-zinc-200/60 dark:ring-white/[0.06] dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] ${className}`}>
+    <div
+      style={{
+        background: 'var(--surface)',
+        border: '1px solid var(--card-border)',
+        borderRadius: 'var(--card-radius)',
+        boxShadow: 'var(--shadow-sm)',
+        backdropFilter: 'var(--backdrop)',
+        WebkitBackdropFilter: 'var(--backdrop)',
+      }}
+      className={className}
+    >
       {children}
     </div>
   )
 }
 
 // Button
-export function Btn({ children, onClick, variant = 'primary', size = 'md', className = '', disabled = false, type = 'button' }) {
-  const base = 'inline-flex items-center justify-center gap-2 font-semibold rounded-xl transition-all active:scale-[0.97] disabled:opacity-40 select-none focus:outline-none focus:ring-2 focus:ring-blue-500/70 focus:ring-offset-1 dark:focus:ring-offset-zinc-900'
+export function Btn({ children, onClick, variant = 'primary', size = 'md', className = '', disabled = false, type = 'button', style = {} }) {
+  const base = 'inline-flex items-center justify-center gap-2 font-semibold rounded-xl transition-all active:scale-[0.97] disabled:opacity-40 select-none focus:outline-none'
   const sizes = { sm: 'px-3 py-1.5 text-xs', md: 'px-4 py-2.5 text-sm', lg: 'w-full py-3.5 text-[15px]' }
-  const variants = {
-    primary: 'bg-blue-500 text-white hover:bg-blue-600 hover:shadow-lg hover:shadow-blue-500/40 shadow-sm shadow-blue-500/25',
+  const variantClass = {
+    primary: 'text-white',
     ghost:   'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-zinc-700',
-    danger:  'bg-rose-500 text-white hover:bg-rose-600 shadow-sm shadow-rose-500/25',
-    success: 'bg-emerald-500 text-white hover:bg-emerald-600 shadow-sm shadow-emerald-500/25',
+    danger:  'bg-rose-500 text-white hover:bg-rose-600',
+    success: 'bg-emerald-500 text-white hover:bg-emerald-600',
+  }
+  const variantStyle = {
+    primary: { background: 'var(--accent)', ...style },
+    ghost:   style,
+    danger:  style,
+    success: style,
   }
   return (
-    <button type={type} onClick={onClick} disabled={disabled} className={`${base} ${sizes[size]} ${variants[variant]} ${className}`}>
+    <button type={type} onClick={onClick} disabled={disabled}
+      className={`${base} ${sizes[size]} ${variantClass[variant]} ${className}`}
+      style={variantStyle[variant]}
+    >
       {children}
     </button>
   )
@@ -31,7 +50,8 @@ export function Input({ label, ...props }) {
       {label && <label className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">{label}</label>}
       <input
         {...props}
-        className="w-full rounded-xl bg-zinc-100 dark:bg-zinc-800 border-0 px-4 py-3 text-sm text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-blue-400/80 dark:focus:ring-blue-500/90"
+        style={{ background: 'var(--surface-2, var(--surface))', color: 'var(--text)', borderColor: 'var(--border)' }}
+        className="w-full rounded-xl border px-4 py-3 text-sm placeholder:text-[var(--text-3)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
       />
     </div>
   )
@@ -67,7 +87,7 @@ export function Badge({ children, color = 'blue' }) {
 
 // Section header
 export function SectionHeader({ children }) {
-  return <p className="text-[11px] font-bold uppercase tracking-widest text-zinc-400 dark:text-blue-400/60 mb-2 mt-1">{children}</p>
+  return <p style={{ color: 'var(--text-3)', fontFamily: 'var(--font-sans)' }} className="text-[11px] font-bold uppercase tracking-widest mb-2 mt-1">{children}</p>
 }
 
 // Empty state

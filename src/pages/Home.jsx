@@ -2,7 +2,6 @@ import { format, parseISO, isBefore, startOfDay, differenceInDays, addDays } fro
 import { ArrowRight, TrendingUp, TrendingDown, Bell, Heart, Flame, Calendar, Clock, MapPin, CheckSquare, Sparkles } from 'lucide-react'
 import { useStore } from '../store'
 import { useNavigate } from 'react-router-dom'
-import { getTheme } from '../lib/themes'
 
 function greeting() {
   const h = new Date().getHours()
@@ -26,10 +25,18 @@ function ProgressRing({ done, total, size = 40, color = 'rgba(255,255,255,0.9)' 
   )
 }
 
+const infoCardStyle = {
+  background: 'var(--surface)',
+  border: '1px solid var(--card-border)',
+  borderRadius: 'var(--card-radius)',
+  boxShadow: 'var(--shadow-md)',
+  backdropFilter: 'var(--backdrop)',
+  WebkitBackdropFilter: 'var(--backdrop)',
+}
+
 export default function Home() {
-  const { name, dailyTasks, tasks, appointments, transactions, gifts, dates, currency, habits, habitLogs, theme } = useStore()
+  const { name, dailyTasks, tasks, appointments, transactions, gifts, dates, currency, habits, habitLogs } = useStore()
   const navigate = useNavigate()
-  const t = getTheme(theme)
 
   const todayStr = format(new Date(), 'yyyy-MM-dd')
   const thisMonth = format(new Date(), 'yyyy-MM')
@@ -70,54 +77,65 @@ export default function Home() {
       {/* ── Header ── */}
       <div className="flex items-start justify-between pt-1">
         <div>
-          <p className="text-sm text-zinc-400 dark:text-zinc-500">{format(new Date(), 'EEEE, d MMMM yyyy')}</p>
-          <h1 className="text-[26px] font-bold text-zinc-900 dark:text-[#E6EAF2] mt-0.5 leading-tight">
+          <p style={{ color: 'var(--text-3)', fontFamily: 'var(--font-sans)' }} className="text-sm">
+            {format(new Date(), 'EEEE, d MMMM yyyy')}
+          </p>
+          <h1 style={{ color: 'var(--text)', fontFamily: 'var(--font-sans)' }} className="text-[26px] font-bold mt-0.5 leading-tight">
             {greeting()}, {name} 👋
           </h1>
         </div>
-        <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${t.tasksGrad} flex items-center justify-center text-white font-bold text-sm shadow-lg mt-1 shrink-0`}>
+        <div style={{ background: 'var(--grad-tasks)' }} className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-lg mt-1 shrink-0">
           {name?.[0]?.toUpperCase() ?? 'U'}
         </div>
       </div>
 
       {/* ── Today at a Glance — 3 stat cards ── */}
       <div>
-        <p className="text-[11px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mb-3">Today at a glance</p>
+        <p style={{ color: 'var(--text-3)', fontFamily: 'var(--font-sans)' }} className="text-[11px] font-bold uppercase tracking-widest mb-3">Today at a glance</p>
         <div className="grid grid-cols-3 gap-2.5">
 
           {/* Tasks */}
           <div
             onClick={() => navigate('/tasks')}
-            className={`relative overflow-hidden bg-gradient-to-br ${t.tasksGrad} shadow-lg ${t.tasksShadow} rounded-2xl p-3.5 cursor-pointer active:scale-[0.97] transition-all`}
+            style={{ background: 'var(--grad-tasks)', borderRadius: 'var(--card-radius)' }}
+            className="relative overflow-hidden p-3.5 cursor-pointer active:scale-[0.97] transition-all shadow-lg"
           >
             <span className="absolute -right-2 -bottom-2 text-6xl opacity-[0.15] select-none pointer-events-none">✅</span>
             <ProgressRing done={doneTasks} total={todayTasks.length} size={40} />
-            <p className="text-xl font-bold text-white mt-2">{doneTasks}<span className="text-sm text-white/60">/{todayTasks.length}</span></p>
-            <p className="text-[10px] font-bold text-white/80 uppercase tracking-wide mt-0.5">Tasks</p>
+            <p style={{ color: '#fff' }} className="text-xl font-bold mt-2">
+              {doneTasks}<span style={{ color: 'rgba(255,255,255,0.6)' }} className="text-sm">/{todayTasks.length}</span>
+            </p>
+            <p style={{ color: 'rgba(255,255,255,0.8)' }} className="text-[10px] font-bold uppercase tracking-wide mt-0.5">Tasks</p>
           </div>
 
           {/* Habits */}
           <div
             onClick={() => navigate('/tasks')}
-            className={`relative overflow-hidden bg-gradient-to-br ${t.habitsGrad} shadow-lg ${t.habitsShadow} rounded-2xl p-3.5 cursor-pointer active:scale-[0.97] transition-all`}
+            style={{ background: 'var(--grad-habits)', borderRadius: 'var(--card-radius)' }}
+            className="relative overflow-hidden p-3.5 cursor-pointer active:scale-[0.97] transition-all shadow-lg"
           >
             <span className="absolute -right-2 -bottom-2 text-6xl opacity-[0.15] select-none pointer-events-none">🔥</span>
             <ProgressRing done={doneHabits} total={habits.length} size={40} />
-            <p className="text-xl font-bold text-white mt-2">{doneHabits}<span className="text-sm text-white/60">/{habits.length}</span></p>
-            <p className="text-[10px] font-bold text-white/80 uppercase tracking-wide mt-0.5">Habits</p>
+            <p style={{ color: '#fff' }} className="text-xl font-bold mt-2">
+              {doneHabits}<span style={{ color: 'rgba(255,255,255,0.6)' }} className="text-sm">/{habits.length}</span>
+            </p>
+            <p style={{ color: 'rgba(255,255,255,0.8)' }} className="text-[10px] font-bold uppercase tracking-wide mt-0.5">Habits</p>
           </div>
 
           {/* Finance */}
           <div
             onClick={() => navigate('/finance')}
-            className={`relative overflow-hidden bg-gradient-to-br ${t.finGrad} shadow-lg ${t.finShadow} rounded-2xl p-3.5 cursor-pointer active:scale-[0.97] transition-all`}
+            style={{ background: 'var(--grad-finance)', borderRadius: 'var(--card-radius)' }}
+            className="relative overflow-hidden p-3.5 cursor-pointer active:scale-[0.97] transition-all shadow-lg"
           >
             <span className="absolute -right-2 -bottom-2 text-6xl opacity-[0.15] select-none pointer-events-none">💰</span>
             <div className="w-10 h-10 flex items-center justify-center">
-              <TrendingUp size={22} className="text-white" strokeWidth={2} />
+              <TrendingUp size={22} color="#fff" strokeWidth={2} />
             </div>
-            <p className="text-xl font-bold text-white mt-2">{currency}{Math.abs(saved).toFixed(0)}</p>
-            <p className="text-[10px] font-bold text-white/80 uppercase tracking-wide mt-0.5">Saved</p>
+            <p style={{ color: '#fff' }} className="text-xl font-bold mt-2">
+              {currency}{Math.abs(saved).toFixed(0)}
+            </p>
+            <p style={{ color: 'rgba(255,255,255,0.8)' }} className="text-[10px] font-bold uppercase tracking-wide mt-0.5">Saved</p>
           </div>
         </div>
       </div>
@@ -125,30 +143,43 @@ export default function Home() {
       {/* ── Finance detail card ── */}
       <div
         onClick={() => navigate('/finance')}
-        className="relative overflow-hidden bg-white dark:bg-[#151C2A] rounded-2xl p-4 border border-zinc-100 dark:border-white/[0.06] shadow-[0_8px_24px_rgba(15,23,42,0.06)] dark:shadow-[0_8px_24px_rgba(0,0,0,0.35)] cursor-pointer active:scale-[0.98] transition-all"
+        style={infoCardStyle}
+        className="relative overflow-hidden p-4 cursor-pointer active:scale-[0.98] transition-all"
       >
-        <span className="absolute right-3 top-3 text-5xl opacity-[0.07] dark:opacity-[0.12] select-none pointer-events-none">📊</span>
+        <span className="absolute right-3 top-3 text-5xl opacity-[0.08] select-none pointer-events-none">📊</span>
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-emerald-100 dark:bg-emerald-500/20 flex items-center justify-center">
-              <TrendingUp size={14} className="text-emerald-600 dark:text-emerald-400" />
+            <div style={{ background: 'var(--accent-2-soft)', borderRadius: 'var(--radius-sm)' }} className="w-7 h-7 flex items-center justify-center">
+              <TrendingUp size={14} style={{ color: 'var(--accent-2)' }} />
             </div>
-            <p className="text-sm font-semibold text-zinc-800 dark:text-[#E6EAF2]">{format(new Date(), 'MMMM')} Finance</p>
+            <p style={{ color: 'var(--text)', fontFamily: 'var(--font-sans)' }} className="text-sm font-semibold">
+              {format(new Date(), 'MMMM')} Finance
+            </p>
           </div>
-          <ArrowRight size={14} className="text-zinc-400" />
+          <ArrowRight size={14} style={{ color: 'var(--text-3)' }} />
         </div>
         <div className="grid grid-cols-3 gap-3">
           <div>
-            <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-wide flex items-center gap-1"><TrendingUp size={9} />Income</p>
-            <p className="text-lg font-bold text-zinc-900 dark:text-white mt-0.5">{currency}{monthIncome.toFixed(0)}</p>
+            <p className="text-[10px] font-bold uppercase tracking-wide flex items-center gap-1" style={{ color: 'var(--success)' }}>
+              <TrendingUp size={9} />Income
+            </p>
+            <p style={{ color: 'var(--text)', fontFamily: 'var(--font-sans)' }} className="text-lg font-bold mt-0.5">
+              {currency}{monthIncome.toFixed(0)}
+            </p>
           </div>
           <div>
-            <p className="text-[10px] font-bold text-rose-500 uppercase tracking-wide flex items-center gap-1"><TrendingDown size={9} />Spent</p>
-            <p className="text-lg font-bold text-zinc-900 dark:text-white mt-0.5">{currency}{monthExpenses.toFixed(0)}</p>
+            <p className="text-[10px] font-bold uppercase tracking-wide flex items-center gap-1" style={{ color: 'var(--danger)' }}>
+              <TrendingDown size={9} />Spent
+            </p>
+            <p style={{ color: 'var(--text)', fontFamily: 'var(--font-sans)' }} className="text-lg font-bold mt-0.5">
+              {currency}{monthExpenses.toFixed(0)}
+            </p>
           </div>
           <div>
-            <p className={`text-[10px] font-bold uppercase tracking-wide ${saved >= 0 ? 'text-blue-500' : 'text-amber-500'}`}>Saved</p>
-            <p className={`text-lg font-bold mt-0.5 ${saved >= 0 ? 'text-zinc-900 dark:text-white' : 'text-amber-500'}`}>
+            <p className="text-[10px] font-bold uppercase tracking-wide" style={{ color: saved >= 0 ? 'var(--accent)' : 'var(--warning)' }}>
+              Saved
+            </p>
+            <p style={{ color: saved >= 0 ? 'var(--text)' : 'var(--warning)', fontFamily: 'var(--font-sans)' }} className="text-lg font-bold mt-0.5">
               {saved >= 0 ? '+' : ''}{currency}{saved.toFixed(0)}
             </p>
           </div>
@@ -159,25 +190,31 @@ export default function Home() {
       {habitsToday.length > 0 && (
         <div
           onClick={() => navigate('/tasks')}
-          className="relative overflow-hidden bg-white dark:bg-[#151C2A] rounded-2xl p-4 border border-zinc-100 dark:border-white/[0.06] shadow-[0_8px_24px_rgba(15,23,42,0.06)] dark:shadow-[0_8px_24px_rgba(0,0,0,0.35)] cursor-pointer active:scale-[0.98] transition-all"
+          style={infoCardStyle}
+          className="relative overflow-hidden p-4 cursor-pointer active:scale-[0.98] transition-all"
         >
-          <span className="absolute right-3 top-3 text-5xl opacity-[0.07] dark:opacity-[0.12] select-none pointer-events-none">🏆</span>
+          <span className="absolute right-3 top-3 text-5xl opacity-[0.08] select-none pointer-events-none">🏆</span>
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-violet-100 dark:bg-violet-500/20 flex items-center justify-center">
-                <Flame size={14} className="text-violet-600 dark:text-violet-400" />
+              <div style={{ background: 'var(--lavender-soft)', borderRadius: 'var(--radius-sm)' }} className="w-7 h-7 flex items-center justify-center">
+                <Flame size={14} style={{ color: 'var(--lavender)' }} />
               </div>
-              <p className="text-sm font-semibold text-zinc-800 dark:text-[#E6EAF2]">Habits</p>
+              <p style={{ color: 'var(--text)', fontFamily: 'var(--font-sans)' }} className="text-sm font-semibold">Habits</p>
             </div>
-            <span className="text-xs font-bold text-zinc-400">{doneHabits}/{habitsToday.length} done</span>
+            <span style={{ color: 'var(--text-3)', fontFamily: 'var(--font-sans)' }} className="text-xs font-bold">
+              {doneHabits}/{habitsToday.length} done
+            </span>
           </div>
           <div className="flex flex-wrap gap-2">
             {habitsToday.map((h) => (
-              <div key={h.id} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
-                h.done
-                  ? 'bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300'
-                  : 'bg-zinc-100 dark:bg-white/[0.06] text-zinc-500 dark:text-zinc-400'
-              }`}>
+              <div
+                key={h.id}
+                style={h.done
+                  ? { background: 'var(--accent-2-soft)', color: 'var(--accent-2)', borderRadius: 'var(--radius-pill)' }
+                  : { background: 'var(--surface-3)', color: 'var(--text-3)', borderRadius: 'var(--radius-pill)' }
+                }
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold transition-all"
+              >
                 <span>{h.emoji}</span>
                 <span>{h.name}</span>
                 <span className="opacity-60 font-bold">{h.count}/{h.target}</span>
@@ -191,33 +228,48 @@ export default function Home() {
       {upcomingApts.length > 0 && (
         <div
           onClick={() => navigate('/tasks')}
-          className="relative overflow-hidden bg-white dark:bg-[#151C2A] rounded-2xl border border-zinc-100 dark:border-white/[0.06] shadow-[0_8px_24px_rgba(15,23,42,0.06)] dark:shadow-[0_8px_24px_rgba(0,0,0,0.35)] cursor-pointer active:scale-[0.98] transition-all"
+          style={infoCardStyle}
+          className="relative overflow-hidden cursor-pointer active:scale-[0.98] transition-all"
         >
-          <span className="absolute right-3 top-3 text-5xl opacity-[0.07] dark:opacity-[0.12] select-none pointer-events-none">📅</span>
+          <span className="absolute right-3 top-3 text-5xl opacity-[0.08] select-none pointer-events-none">📅</span>
           <div className="flex items-center justify-between px-4 pt-4 pb-2">
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-teal-100 dark:bg-teal-500/20 flex items-center justify-center">
-                <Calendar size={13} className="text-teal-600 dark:text-teal-400" />
+              <div style={{ background: 'var(--accent-2-soft)', borderRadius: 'var(--radius-sm)' }} className="w-7 h-7 flex items-center justify-center">
+                <Calendar size={13} style={{ color: 'var(--accent-2)' }} />
               </div>
-              <p className="text-sm font-semibold text-zinc-800 dark:text-[#E6EAF2]">Upcoming</p>
+              <p style={{ color: 'var(--text)', fontFamily: 'var(--font-sans)' }} className="text-sm font-semibold">Upcoming</p>
             </div>
-            <ArrowRight size={14} className="text-zinc-400" />
+            <ArrowRight size={14} style={{ color: 'var(--text-3)' }} />
           </div>
-          <div className="divide-y divide-zinc-100 dark:divide-white/[0.04]">
+          <div style={{ borderTop: '1px solid var(--divider)' }}>
             {upcomingApts.map((apt) => {
               const isAptToday = apt.date === todayStr
               const diff = differenceInDays(parseISO(apt.date), new Date())
               return (
-                <div key={apt.id} className="flex items-center gap-3 px-4 py-2.5">
-                  <div className="w-0.5 h-8 rounded-full bg-teal-500 shrink-0" />
+                <div key={apt.id} style={{ borderBottom: '1px solid var(--divider)' }} className="flex items-center gap-3 px-4 py-2.5 last:border-b-0">
+                  <div style={{ background: 'var(--accent-2)' }} className="w-0.5 h-8 rounded-full shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-100 truncate">{apt.title}</p>
+                    <p style={{ color: 'var(--text)', fontFamily: 'var(--font-sans)' }} className="text-sm font-semibold truncate">{apt.title}</p>
                     <div className="flex items-center gap-2 mt-0.5">
-                      {apt.startTime && <span className="text-xs text-zinc-400 flex items-center gap-1"><Clock size={10} />{apt.startTime}</span>}
-                      {apt.location && <span className="text-xs text-zinc-400 flex items-center gap-1 truncate max-w-[110px]"><MapPin size={10} />{apt.location}</span>}
+                      {apt.startTime && (
+                        <span style={{ color: 'var(--text-3)' }} className="text-xs flex items-center gap-1">
+                          <Clock size={10} />{apt.startTime}
+                        </span>
+                      )}
+                      {apt.location && (
+                        <span style={{ color: 'var(--text-3)' }} className="text-xs flex items-center gap-1 truncate max-w-[110px]">
+                          <MapPin size={10} />{apt.location}
+                        </span>
+                      )}
                     </div>
                   </div>
-                  <span className={`text-[10px] font-bold shrink-0 px-2.5 py-1 rounded-full ${isAptToday ? 'bg-teal-100 dark:bg-teal-500/20 text-teal-700 dark:text-teal-300' : 'bg-zinc-100 dark:bg-white/[0.06] text-zinc-500 dark:text-zinc-400'}`}>
+                  <span
+                    style={isAptToday
+                      ? { background: 'var(--accent-2-soft)', color: 'var(--accent-2)', borderRadius: 'var(--radius-pill)' }
+                      : { background: 'var(--surface-3)', color: 'var(--text-3)', borderRadius: 'var(--radius-pill)' }
+                    }
+                    className="text-[10px] font-bold shrink-0 px-2.5 py-1"
+                  >
                     {isAptToday ? 'Today' : diff === 1 ? 'Tomorrow' : `In ${diff}d`}
                   </span>
                 </div>
@@ -231,40 +283,55 @@ export default function Home() {
       {(overdueTasks > 0 || upcomingDates.length > 0 || pendingGifts > 0) && (
         <div className="space-y-2">
           {overdueTasks > 0 && (
-            <div className="flex items-center gap-3 bg-rose-50 dark:bg-rose-500/10 rounded-2xl px-4 py-3 cursor-pointer active:scale-[0.98] transition-all border border-rose-100/60 dark:border-rose-500/20" onClick={() => navigate('/tasks')}>
-              <div className="w-7 h-7 rounded-lg bg-rose-100 dark:bg-rose-500/20 flex items-center justify-center shrink-0">
-                <Bell size={14} className="text-rose-500" />
+            <div
+              onClick={() => navigate('/tasks')}
+              style={{ background: 'var(--warm-soft)', border: '1px solid var(--warm)', borderRadius: 'var(--card-radius)' }}
+              className="flex items-center gap-3 px-4 py-3 cursor-pointer active:scale-[0.98] transition-all"
+            >
+              <div style={{ background: 'var(--warm-soft)', borderRadius: 'var(--radius-sm)' }} className="w-7 h-7 flex items-center justify-center shrink-0">
+                <Bell size={14} style={{ color: 'var(--warm)' }} />
               </div>
-              <p className="flex-1 text-sm font-semibold text-rose-700 dark:text-rose-300">
+              <p style={{ color: 'var(--warm)', fontFamily: 'var(--font-sans)' }} className="flex-1 text-sm font-semibold">
                 {overdueTasks} overdue task{overdueTasks > 1 ? 's' : ''}
               </p>
-              <ArrowRight size={14} className="text-rose-400" />
+              <ArrowRight size={14} style={{ color: 'var(--warm)' }} />
             </div>
           )}
           {upcomingDates.map((d) => {
             const diff = differenceInDays(parseISO(d.date), new Date())
             return (
-              <div key={d.id} className="flex items-center gap-3 bg-pink-50 dark:bg-pink-500/10 rounded-2xl px-4 py-3 cursor-pointer active:scale-[0.98] transition-all border border-pink-100/60 dark:border-pink-500/20" onClick={() => navigate('/her')}>
-                <div className="w-7 h-7 rounded-lg bg-pink-100 dark:bg-pink-500/20 flex items-center justify-center shrink-0">
-                  <Heart size={14} className="text-pink-500" fill="currentColor" />
+              <div
+                key={d.id}
+                onClick={() => navigate('/her')}
+                style={{ background: 'var(--lavender-soft)', border: '1px solid var(--lavender)', borderRadius: 'var(--card-radius)' }}
+                className="flex items-center gap-3 px-4 py-3 cursor-pointer active:scale-[0.98] transition-all"
+              >
+                <div style={{ background: 'var(--lavender-soft)', borderRadius: 'var(--radius-sm)' }} className="w-7 h-7 flex items-center justify-center shrink-0">
+                  <Heart size={14} style={{ color: 'var(--lavender)' }} fill="currentColor" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-semibold text-pink-700 dark:text-pink-300">{d.name}</p>
-                  <p className="text-xs text-pink-400">{diff === 0 ? 'Today! 🎉' : `in ${diff} day${diff > 1 ? 's' : ''}`}</p>
+                  <p style={{ color: 'var(--lavender)', fontFamily: 'var(--font-sans)' }} className="text-sm font-semibold">{d.name}</p>
+                  <p style={{ color: 'var(--lavender)' }} className="text-xs opacity-70">
+                    {diff === 0 ? 'Today! 🎉' : `in ${diff} day${diff > 1 ? 's' : ''}`}
+                  </p>
                 </div>
-                <ArrowRight size={14} className="text-pink-400" />
+                <ArrowRight size={14} style={{ color: 'var(--lavender)' }} />
               </div>
             )
           })}
           {pendingGifts > 0 && (
-            <div className="flex items-center gap-3 bg-violet-50 dark:bg-violet-500/10 rounded-2xl px-4 py-3 cursor-pointer active:scale-[0.98] transition-all border border-violet-100/60 dark:border-violet-500/20" onClick={() => navigate('/her')}>
-              <div className="w-7 h-7 rounded-lg bg-violet-100 dark:bg-violet-500/20 flex items-center justify-center shrink-0">
-                <Sparkles size={14} className="text-violet-500" />
+            <div
+              onClick={() => navigate('/her')}
+              style={{ background: 'var(--accent-soft)', border: '1px solid var(--accent)', borderRadius: 'var(--card-radius)' }}
+              className="flex items-center gap-3 px-4 py-3 cursor-pointer active:scale-[0.98] transition-all"
+            >
+              <div style={{ background: 'var(--accent-soft)', borderRadius: 'var(--radius-sm)' }} className="w-7 h-7 flex items-center justify-center shrink-0">
+                <Sparkles size={14} style={{ color: 'var(--accent)' }} />
               </div>
-              <p className="flex-1 text-sm font-semibold text-violet-700 dark:text-violet-300">
+              <p style={{ color: 'var(--accent)', fontFamily: 'var(--font-sans)' }} className="flex-1 text-sm font-semibold">
                 {pendingGifts} gift idea{pendingGifts > 1 ? 's' : ''} not bought yet
               </p>
-              <ArrowRight size={14} className="text-violet-400" />
+              <ArrowRight size={14} style={{ color: 'var(--accent)' }} />
             </div>
           )}
         </div>

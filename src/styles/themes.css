@@ -1,0 +1,378 @@
+/*
+ * LifeFlow Design System — 4 Theme Tokens
+ * Switch theme by setting data-theme="aurora|glass|paper|neon" on the root div.
+ * All components read only CSS variables — zero JS conditional rendering needed.
+ */
+
+/* ══════════════════════════════════════════════════════════════
+   AURORA — light, soft, airy, friendly
+   Inspiration: Things 3, Fantastical, Apple Calendar
+   ══════════════════════════════════════════════════════════════ */
+[data-theme="aurora"] {
+  --font-sans:    'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-display: 'Plus Jakarta Sans', system-ui, sans-serif;
+
+  /* Surfaces */
+  --bg:            #FAFAF7;
+  --bg-2:          #F2F2EE;
+  --surface:       #FFFFFF;
+  --surface-2:     #F7F7F4;
+  --surface-3:     #EDEDEA;
+  --overlay:       rgba(20, 24, 33, 0.04);
+
+  /* Ink */
+  --text:          #1B2030;
+  --text-2:        #4B5468;
+  --text-3:        #8A92A6;
+  --text-on-accent:#FFFFFF;
+
+  /* Borders */
+  --border:        rgba(20, 24, 33, 0.08);
+  --border-strong: rgba(20, 24, 33, 0.16);
+  --divider:       rgba(20, 24, 33, 0.05);
+
+  /* Accents */
+  --accent:        #4F7CFF;
+  --accent-soft:   #E6EDFF;
+  --accent-2:      #7BC7BE;
+  --accent-2-soft: #E2F2F0;
+  --warm:          #FF8A6B;
+  --warm-soft:     #FFE8E1;
+  --gold:          #F5B342;
+  --gold-soft:     #FFF1D8;
+  --lavender:      #B6A8F0;
+  --lavender-soft: #ECE8FB;
+  --success:       #5EBE85;
+  --warning:       #F5B342;
+  --danger:        #FF6B6B;
+
+  /* Geometry */
+  --radius-xs:  8px;
+  --radius-sm:  12px;
+  --radius-md:  16px;
+  --radius-lg:  22px;
+  --radius-xl:  28px;
+  --radius-pill:999px;
+
+  /* Shadows */
+  --shadow-sm:  0 1px 2px rgba(15,23,42,0.04), 0 2px 8px rgba(15,23,42,0.04);
+  --shadow-md:  0 2px 4px rgba(15,23,42,0.05), 0 8px 24px rgba(15,23,42,0.07);
+  --shadow-lg:  0 4px 8px rgba(15,23,42,0.06), 0 16px 40px rgba(15,23,42,0.09);
+  --shadow-pop: 0 8px 32px rgba(79,124,255,0.30);
+
+  /* Card */
+  --card-bg:     var(--surface);
+  --card-border: var(--border);
+  --card-radius: var(--radius-lg);
+  --backdrop:    none;
+
+  /* Gradient backgrounds */
+  --grad-primary:   linear-gradient(135deg, #4F7CFF 0%, #7BC7BE 100%);
+  --grad-tasks:     linear-gradient(135deg, #4F7CFF 0%, #6B8FFF 100%);
+  --grad-habits:    linear-gradient(135deg, #B6A8F0 0%, #7BC7BE 100%);
+  --grad-finance:   linear-gradient(135deg, #7BC7BE 0%, #5EBE85 100%);
+  --grad-hero-bg:   linear-gradient(180deg, #FAFAF7 0%, #F2F2EE 100%);
+
+  /* Nav */
+  --nav-bg:         rgba(255,255,255,0.88);
+  --nav-blur:       blur(20px) saturate(180%);
+  --nav-active:     #4F7CFF;
+  --nav-inactive:   #8A92A6;
+  --nav-indicator:  #4F7CFF;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   GLASS — dark navy, frosted glass panels, luminous glows
+   Inspiration: Raycast, Linear, Vercel dark, iOS 26 liquid glass
+   ══════════════════════════════════════════════════════════════ */
+[data-theme="glass"] {
+  --font-sans:    'Manrope', system-ui, sans-serif;
+  --font-display: 'Manrope', system-ui, sans-serif;
+
+  --bg:            #07091A;
+  --bg-2:          #0C1027;
+  --surface:       rgba(255,255,255,0.05);
+  --surface-2:     rgba(255,255,255,0.03);
+  --surface-3:     rgba(255,255,255,0.09);
+  --overlay:       rgba(255,255,255,0.04);
+
+  --text:          #ECEEFF;
+  --text-2:        #A8AEC8;
+  --text-3:        #6E7592;
+  --text-on-accent:#07091A;
+
+  --border:        rgba(255,255,255,0.09);
+  --border-strong: rgba(255,255,255,0.18);
+  --divider:       rgba(255,255,255,0.06);
+
+  --accent:        #6B8FFF;
+  --accent-soft:   rgba(107,143,255,0.18);
+  --accent-2:      #5EEAD4;
+  --accent-2-soft: rgba(94,234,212,0.15);
+  --warm:          #FF8C76;
+  --warm-soft:     rgba(255,140,118,0.18);
+  --gold:          #F8C455;
+  --gold-soft:     rgba(248,196,85,0.18);
+  --lavender:      #C4B5FD;
+  --lavender-soft: rgba(196,181,253,0.18);
+  --success:       #5EEAD4;
+  --warning:       #F8C455;
+  --danger:        #FF8C76;
+
+  --radius-xs:  10px;
+  --radius-sm:  14px;
+  --radius-md:  20px;
+  --radius-lg:  24px;
+  --radius-xl:  32px;
+  --radius-pill:999px;
+
+  --shadow-sm:  0 1px 0 rgba(255,255,255,0.04) inset, 0 2px 12px rgba(0,0,0,0.4);
+  --shadow-md:  0 1px 0 rgba(255,255,255,0.06) inset, 0 8px 28px rgba(0,0,0,0.5);
+  --shadow-lg:  0 1px 0 rgba(255,255,255,0.08) inset, 0 16px 48px rgba(0,0,0,0.6);
+  --shadow-pop: 0 0 0 1px rgba(107,143,255,0.4), 0 12px 40px rgba(107,143,255,0.4);
+
+  --card-bg:     var(--surface);
+  --card-border: var(--border);
+  --card-radius: var(--radius-lg);
+  --backdrop:    blur(20px) saturate(160%);
+
+  --grad-primary: linear-gradient(135deg, rgba(107,143,255,0.9) 0%, rgba(94,234,212,0.9) 100%);
+  --grad-tasks:   linear-gradient(135deg, #6B8FFF 0%, #8B5CF6 100%);
+  --grad-habits:  linear-gradient(135deg, #C4B5FD 0%, #F8859F 100%);
+  --grad-finance: linear-gradient(135deg, #5EEAD4 0%, #6B8FFF 100%);
+  --grad-hero-bg: radial-gradient(60% 50% at 80% 10%, rgba(94,234,212,0.15) 0%, transparent 70%),
+                  radial-gradient(50% 40% at 10% 90%, rgba(107,143,255,0.18) 0%, transparent 70%),
+                  radial-gradient(40% 30% at 90% 80%, rgba(196,181,253,0.12) 0%, transparent 70%),
+                  #07091A;
+
+  --nav-bg:        rgba(7,9,26,0.85);
+  --nav-blur:      blur(24px) saturate(200%);
+  --nav-active:    #6B8FFF;
+  --nav-inactive:  #6E7592;
+  --nav-indicator: #6B8FFF;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   PAPER — warm cream, editorial, earthy, calm
+   Inspiration: Bear Notes, Notion (warm), Readwise Reader
+   ══════════════════════════════════════════════════════════════ */
+[data-theme="paper"] {
+  --font-sans:    'Geist', system-ui, sans-serif;
+  --font-display: 'Newsreader', Georgia, serif;
+
+  --bg:            #F1EBDC;
+  --bg-2:          #E8DFCC;
+  --surface:       #FBF7EC;
+  --surface-2:     #F4EDD8;
+  --surface-3:     #E8DFCC;
+  --overlay:       rgba(26,23,20,0.04);
+
+  --text:          #1A1714;
+  --text-2:        #5B5347;
+  --text-3:        #8B8170;
+  --text-on-accent:#FBF7EC;
+
+  --border:        rgba(26,23,20,0.12);
+  --border-strong: rgba(26,23,20,0.24);
+  --divider:       rgba(26,23,20,0.08);
+
+  --accent:        #B8472A;
+  --accent-soft:   #F0DFD5;
+  --accent-2:      #4A5D3A;
+  --accent-2-soft: #DDE2D2;
+  --warm:          #C9923D;
+  --warm-soft:     #F0E4C9;
+  --gold:          #B5893A;
+  --gold-soft:     #EFE3C4;
+  --lavender:      #6F6080;
+  --lavender-soft: #E6E0EA;
+  --success:       #4A5D3A;
+  --warning:       #B5893A;
+  --danger:        #A3565A;
+
+  --radius-xs:  4px;
+  --radius-sm:  6px;
+  --radius-md:  10px;
+  --radius-lg:  14px;
+  --radius-xl:  20px;
+  --radius-pill:999px;
+
+  --shadow-sm:  0 1px 0 rgba(26,23,20,0.06);
+  --shadow-md:  0 1px 0 rgba(26,23,20,0.06), 0 3px 10px rgba(26,23,20,0.05);
+  --shadow-lg:  0 1px 0 rgba(26,23,20,0.08), 0 8px 22px rgba(26,23,20,0.07);
+  --shadow-pop: 0 6px 20px rgba(184,71,42,0.22);
+
+  --card-bg:     var(--surface);
+  --card-border: var(--border);
+  --card-radius: var(--radius-md);
+  --backdrop:    none;
+
+  --grad-primary: linear-gradient(135deg, #B8472A 0%, #C9923D 100%);
+  --grad-tasks:   linear-gradient(135deg, #B8472A 0%, #A3565A 100%);
+  --grad-habits:  linear-gradient(135deg, #4A5D3A 0%, #6F6080 100%);
+  --grad-finance: linear-gradient(135deg, #C9923D 0%, #B5893A 100%);
+  --grad-hero-bg: linear-gradient(180deg, #F1EBDC 0%, #E8DFCC 100%);
+
+  --nav-bg:        rgba(251,247,236,0.92);
+  --nav-blur:      blur(16px);
+  --nav-active:    #B8472A;
+  --nav-inactive:  #8B8170;
+  --nav-indicator: #B8472A;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   NEON — ultra dark, electric accents, high contrast, sharp
+   Inspiration: Raycast, Linear, Vercel, Warp Terminal
+   ══════════════════════════════════════════════════════════════ */
+[data-theme="neon"] {
+  --font-sans:    'Inter', system-ui, sans-serif;
+  --font-display: 'Inter', system-ui, sans-serif;
+
+  --bg:            #08080F;
+  --bg-2:          #0E0E1A;
+  --surface:       #111120;
+  --surface-2:     #161628;
+  --surface-3:     #1E1E35;
+  --overlay:       rgba(255,255,255,0.04);
+
+  --text:          #F0F0FF;
+  --text-2:        #9090B0;
+  --text-3:        #606080;
+  --text-on-accent:#08080F;
+
+  --border:        rgba(255,255,255,0.07);
+  --border-strong: rgba(255,255,255,0.14);
+  --divider:       rgba(255,255,255,0.05);
+
+  --accent:        #4488FF;
+  --accent-soft:   rgba(68,136,255,0.15);
+  --accent-2:      #00FFB3;
+  --accent-2-soft: rgba(0,255,179,0.12);
+  --warm:          #FF6644;
+  --warm-soft:     rgba(255,102,68,0.15);
+  --gold:          #FFCC00;
+  --gold-soft:     rgba(255,204,0,0.15);
+  --lavender:      #AA88FF;
+  --lavender-soft: rgba(170,136,255,0.15);
+  --success:       #00FFB3;
+  --warning:       #FFCC00;
+  --danger:        #FF4444;
+
+  --radius-xs:  4px;
+  --radius-sm:  8px;
+  --radius-md:  12px;
+  --radius-lg:  16px;
+  --radius-xl:  22px;
+  --radius-pill:999px;
+
+  --shadow-sm:  0 0 0 1px rgba(68,136,255,0.08), 0 2px 8px rgba(0,0,0,0.5);
+  --shadow-md:  0 0 0 1px rgba(68,136,255,0.12), 0 8px 24px rgba(0,0,0,0.6);
+  --shadow-lg:  0 0 0 1px rgba(68,136,255,0.16), 0 16px 48px rgba(0,0,0,0.7);
+  --shadow-pop: 0 0 20px rgba(68,136,255,0.5), 0 0 60px rgba(68,136,255,0.2);
+
+  --card-bg:     var(--surface);
+  --card-border: var(--border);
+  --card-radius: var(--radius-md);
+  --backdrop:    none;
+
+  --grad-primary: linear-gradient(135deg, #4488FF 0%, #00FFB3 100%);
+  --grad-tasks:   linear-gradient(135deg, #4488FF 0%, #AA88FF 100%);
+  --grad-habits:  linear-gradient(135deg, #AA88FF 0%, #FF6644 100%);
+  --grad-finance: linear-gradient(135deg, #00FFB3 0%, #4488FF 100%);
+  --grad-hero-bg: radial-gradient(50% 60% at 50% 0%, rgba(68,136,255,0.12) 0%, transparent 70%), #08080F;
+
+  --nav-bg:        rgba(8,8,15,0.92);
+  --nav-blur:      blur(20px);
+  --nav-active:    #4488FF;
+  --nav-inactive:  #606080;
+  --nav-indicator: #4488FF;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   SHARED base — applies to all themes via .lf-app
+   ══════════════════════════════════════════════════════════════ */
+
+/* Glass theme background field */
+.lf-app[data-theme="glass"] {
+  background: var(--grad-hero-bg);
+  min-height: 100vh;
+}
+
+/* Paper grain texture */
+.lf-app[data-theme="paper"]::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1000;
+  opacity: 0.55;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.08'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 180px;
+}
+
+/* Neon scanline subtle effect */
+.lf-app[data-theme="neon"]::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1000;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(68,136,255,0.012) 2px,
+    rgba(68,136,255,0.012) 4px
+  );
+}
+
+/* Card primitive used by all themes */
+.lf-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--card-radius);
+  backdrop-filter: var(--backdrop);
+  -webkit-backdrop-filter: var(--backdrop);
+}
+
+/* Glass inset shine on cards */
+[data-theme="glass"] .lf-card {
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.07), var(--shadow-md);
+}
+
+[data-theme="neon"] .lf-card {
+  box-shadow: var(--shadow-md);
+}
+
+/* Glow effects for Glass and Neon themes */
+[data-theme="glass"] .glow-blue {
+  box-shadow: 0 0 20px rgba(107,143,255,0.35), var(--shadow-md);
+}
+[data-theme="glass"] .glow-teal {
+  box-shadow: 0 0 20px rgba(94,234,212,0.3), var(--shadow-md);
+}
+[data-theme="neon"] .glow-accent {
+  box-shadow: 0 0 24px rgba(68,136,255,0.5), 0 0 60px rgba(68,136,255,0.15);
+}
+[data-theme="neon"] .glow-green {
+  box-shadow: 0 0 24px rgba(0,255,179,0.4), 0 0 60px rgba(0,255,179,0.1);
+}
+
+/* Animated gradient for neon/glass hero stat cards */
+@keyframes gradient-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50%       { background-position: 100% 50%; }
+}
+.animated-gradient {
+  background-size: 200% 200%;
+  animation: gradient-shift 4s ease infinite;
+}
+
+/* Progress ring animation */
+@keyframes ring-fill {
+  from { stroke-dasharray: 0 1000; }
+}
+.progress-ring-circle {
+  animation: ring-fill 0.8s ease-out forwards;
+}
