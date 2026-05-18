@@ -114,6 +114,155 @@ function StreakCard({ label, value, gradient, emoji, delay = 0 }) {
   )
 }
 
+// ─── Inline XP Bar ───────────────────────────────────────────────────────────
+
+function InlineXPBar() {
+  const { xp = 0, level = 1 } = useStore()
+  const THRESHOLDS = [0, 100, 250, 500, 1000, 2000, 4000, 8000, 16000, 32000]
+  const currentThresh = THRESHOLDS[Math.min(level - 1, THRESHOLDS.length - 1)] ?? 0
+  const nextThresh = THRESHOLDS[Math.min(level, THRESHOLDS.length - 1)] ?? THRESHOLDS[THRESHOLDS.length - 1]
+  const pct = nextThresh > currentThresh ? Math.min(((xp - currentThresh) / (nextThresh - currentThresh)) * 100, 100) : 100
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', background: 'var(--surface)', border: '1px solid var(--card-border)', borderRadius: 'var(--card-radius)' }}>
+      <div style={{ background: 'var(--grad-tasks)', borderRadius: 99, padding: '2px 8px', whiteSpace: 'nowrap' }}>
+        <span style={{ color: 'white', fontSize: 11, fontWeight: 800 }}>Lv.{level}</span>
+      </div>
+      <div style={{ flex: 1, height: 6, background: 'var(--border)', borderRadius: 99, overflow: 'hidden' }}>
+        <motion.div
+          style={{ height: '100%', background: 'var(--accent)', borderRadius: 99 }}
+          initial={{ width: 0 }}
+          animate={{ width: `${pct}%` }}
+          transition={{ duration: 1, ease: 'easeOut', delay: 0.5 }}
+        />
+      </div>
+      <span style={{ color: 'var(--text-3)', fontSize: 11, whiteSpace: 'nowrap' }}>{xp} XP</span>
+    </div>
+  )
+}
+
+// ─── Efficiency Panel ─────────────────────────────────────────────────────────
+
+function EfficiencyPanel() {
+  const { dailyTasks, habits, habitLogs } = useStore()
+  const todayStr = format(new Date(), 'yyyy-MM-dd')
+
+  // Inline daily calculation (no external dependency needed)
+  const todayTasks = dailyTasks.filter(t => t.date === todayStr)
+  const taskEff = todayTasks.length > 0
+    ? Math.round((todayTasks.filter(t => t.done).length / todayTasks.length) * 100)
+    : null
+
+  const habitsToday = habits.map(h => {
+    const log = habitLogs.find(l => l.habitId === h.id && l.date === todayStr)
+    return { ...h, count: log?.count ?? 0, done: (log?.count ?? 0) >= h.target }
+  })
+  const habitEff = habits.length > 0
+    ? Math.round((habitsToday.filter(h => h.done).length / habits.length) * 100)
+    : null
+
+  const overall = taskEff !== null && habitEff !== null
+    ? Math.round(taskEff * 0.6 + habitEff * 0.4)
+    : taskEff ?? habitEff
+
+  const color = overall === null ? 'var(--text-3)'
+    : overall >= 80 ? 'var(--success)'
+    : overall >= 50 ? 'var(--gold)'
+    : 'var(--danger)'
+
+  if (overall === null) return null // No data today yet
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.4 }}
+      style={{
+        background: 'var(--surface)',
+        border: '1px solid var(--card-border)',
+        borderRadius: 'var(--card-radius)',
+        boxShadow: 'var(--shadow-md)',
+        backdropFilter: 'var(--backdrop)',
+        WebkitBackdropFilter: 'var(--backdrop)',
+        padding: '16px 20px',
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div>
+          <p style={{ color: 'var(--text-3)', fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 4 }}>Today's Efficiency</p>
+          <p style={{ color, fontSize: 36, fontWeight: 900, lineHeight: 1 }}>
+            <AnimatedNumber value={overall} suffix="%" />
+          </p>
+          <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
+            {taskEff !== null && (
+              <span style={{ color: 'var(--text-2)', fontSize: 12 }}>
+                Tasks: <span style={{ color: 'var(--text)', fontWeight: 700 }}>{taskEff}%</span>
+              </span>
+            )}
+            {habitEff !== null && (
+              <span style={{ color: 'var(--text-2)', fontSize: 12 }}>
+                Habits: <span style={{ color: 'var(--text)', fontWeight: 700 }}>{habitEff}%</span>
+              </span>
+            )}
+          </div>
+        </div>
+        <div style={{ position: 'relative', width: 72, height: 72 }}>
+          <ProgressRing done={overall} total={100} size={72} color={color} trackColor="var(--border)" />
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <span style={{ fontSize: 11, fontWeight: 800, color }}>{overall}%</span>
+          </div>
+        </div>
+      </div>
+      {overall === 100 && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          style={{ marginTop: 10, padding: '6px 12px', background: 'var(--success)', borderRadius: 99, display: 'inline-flex', alignItems: 'center', gap: 6 }}
+        >
+          <span style={{ fontSize: 14 }}>🏆</span>
+          <span style={{ color: 'white', fontSize: 12, fontWeight: 700 }}>Perfect Day!</span>
+        </motion.div>
+      )}
+    </motion.div>
+  )
+}
+
+// ─── Mood Bar ─────────────────────────────────────────────────────────────────
+
+function MoodBar() {
+  const { moodLog = [], logMood } = useStore()
+  const todayStr = format(new Date(), 'yyyy-MM-dd')
+  const todayMood = moodLog.find(m => m.date === todayStr)
+  const MOODS = ['😴','😓','😐','😊','🤩']
+  const LABELS = ['Exhausted','Tired','Neutral','Good','Excellent']
+
+  if (todayMood) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', background: 'var(--surface)', border: '1px solid var(--card-border)', borderRadius: 'var(--card-radius)' }}>
+        <span style={{ fontSize: 20 }}>{MOODS[todayMood.mood - 1]}</span>
+        <span style={{ color: 'var(--text-2)', fontSize: 13 }}>Feeling {LABELS[todayMood.mood - 1].toLowerCase()} today</span>
+      </div>
+    )
+  }
+
+  return (
+    <div style={{ padding: '12px 14px', background: 'var(--surface)', border: '1px solid var(--card-border)', borderRadius: 'var(--card-radius)' }}>
+      <p style={{ color: 'var(--text-3)', fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 10 }}>How are you feeling?</p>
+      <div style={{ display: 'flex', gap: 8, justifyContent: 'space-between' }}>
+        {MOODS.map((emoji, i) => (
+          <motion.button key={i}
+            whileTap={{ scale: 0.85 }}
+            whileHover={{ scale: 1.2 }}
+            onClick={() => logMood?.(i + 1)}
+            style={{ fontSize: 28, background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}
+            aria-label={LABELS[i]}
+          >{emoji}</motion.button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function Home() {
@@ -359,6 +508,11 @@ export default function Home() {
             <span style={{ color: 'rgba(255,255,255,0.55)' }} className="text-xs">saved</span>
           </div>
         </motion.div>
+      </motion.div>
+
+      {/* ── XP Bar ── */}
+      <motion.div {...fadeUp(0.06)}>
+        <InlineXPBar />
       </motion.div>
 
       {/* ══════════════════════════════════════════════════
