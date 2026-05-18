@@ -9,13 +9,14 @@ import {
 } from 'lucide-react'
 import {
   format, parseISO, startOfDay, isBefore, isToday, isTomorrow,
-  addDays, startOfMonth, endOfMonth, eachDayOfInterval, getDay,
+  addDays, subDays, startOfMonth, endOfMonth, eachDayOfInterval, getDay,
   isSameDay, isSameMonth, differenceInCalendarDays,
 } from 'date-fns'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useStore } from '../store'
 import Modal from '../components/Modal'
 import { Card, Btn, Input, Select, Badge, SectionHeader, EmptyState } from '../components/UI'
+import { usePomodoroLauncher } from '../components/PomodoroWidget'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const PRIORITY_COLOR = { high: 'red', med: 'amber', low: 'blue' }
@@ -264,6 +265,7 @@ function AppointmentCard({ apt, onEdit, onDelete }) {
 function TaskItem({ task, onToggle, onEdit, onDelete, onReschedule, showDate = false }) {
   const [showActions, setShowActions] = useState(false)
   const overdue = isOverdueTask(task)
+  const launchPomodoro = usePomodoroLauncher()
 
   return (
     <div
@@ -356,13 +358,25 @@ function TaskItem({ task, onToggle, onEdit, onDelete, onReschedule, showDate = f
         )}
       </AnimatePresence>
       {!showActions && (
-        <button
-          onClick={() => onDelete(task.id)}
-          aria-label="Delete task"
-          className="p-1 text-zinc-200 dark:text-zinc-700 hover:text-rose-400 transition-colors shrink-0 focus:outline-none focus:ring-2 focus:ring-rose-500/70 rounded"
-        >
-          <Trash2 size={13} />
-        </button>
+        <>
+          <motion.button
+            whileTap={{ scale: 0.85 }}
+            onClick={() => launchPomodoro(task.id, task.text)}
+            style={{
+              fontSize: 16, background: 'none', border: 'none',
+              cursor: 'pointer', padding: '2px 4px', opacity: 0.6,
+              lineHeight: 1,
+            }}
+            title="Start Pomodoro"
+          >🍅</motion.button>
+          <button
+            onClick={() => onDelete(task.id)}
+            aria-label="Delete task"
+            className="p-1 text-zinc-200 dark:text-zinc-700 hover:text-rose-400 transition-colors shrink-0 focus:outline-none focus:ring-2 focus:ring-rose-500/70 rounded"
+          >
+            <Trash2 size={13} />
+          </button>
+        </>
       )}
     </div>
   )
@@ -1300,6 +1314,208 @@ function CalendarTab() {
   )
 }
 
+// ─── HABIT ANALYTICS ──────────────────────────────────────────────────────────
+function HabitAnalytics({ habits, habitLogs }) {
+  const [expanded, setExpanded] = useState(false)
+
+  const today = new Date()
+  const last7 = eachDayOfInterval({ start: subDays(today, 6), end: today })
+  const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+
+  // Weekly efficiency: for each of last 7 days, ratio of completed habits
+  const weeklyEfficiency = last7.map((day) => {
+    const dateStr = format(day, 'yyyy-MM-dd')
+    if (habits.length === 0) return { day, dateStr, ratio: 0 }
+    let done = 0
+    habits.forEach((h) => {
+      const log = habitLogs.find((l) => l.habitId === h.id && l.date === dateStr)
+      if (log && log.count >= h.target) done++
+    })
+    return { day, dateStr, ratio: habits.length > 0 ? done / habits.length : 0 }
+  })
+
+  // Per-habit stats
+  const habitStats = habits.map((h) => {
+    // Streak: consecutive days (excluding today) meeting target
+    let streak = 0
+    let d = subDays(today, 1)
+    while (streak < 365) {
+      const dateStr = format(d, 'yyyy-MM-dd')
+      const log = habitLogs.find((l) => l.habitId === h.id && l.date === dateStr)
+      if (log && log.count >= h.target) { streak++; d = subDays(d, 1) } else break
+    }
+
+    // Last 7 days dots
+    const dots = last7.map((day) => {
+      const dateStr = format(day, 'yyyy-MM-dd')
+      const log = habitLogs.find((l) => l.habitId === h.id && l.date === dateStr)
+      return !!(log && log.count >= h.target)
+    })
+
+    // Completion % over last 14 days
+    const last14 = eachDayOfInterval({ start: subDays(today, 13), end: today })
+    let completed14 = 0
+    last14.forEach((day) => {
+      const dateStr = format(day, 'yyyy-MM-dd')
+      const log = habitLogs.find((l) => l.habitId === h.id && l.date === dateStr)
+      if (log && log.count >= h.target) completed14++
+    })
+    const pct14 = Math.round((completed14 / 14) * 100)
+
+    return { ...h, streak, dots, pct14 }
+  })
+
+  const squareColor = (ratio) => {
+    if (ratio === 0) return 'var(--surface-2, rgba(120,120,120,0.15))'
+    if (ratio < 0.5) return 'var(--danger, #f43f5e)'
+    if (ratio < 1)   return 'var(--gold, #f5b342)'
+    return 'var(--success, #10b981)'
+  }
+
+  if (habits.length === 0) return null
+
+  return (
+    <div style={{
+      background: 'var(--surface)',
+      border: '1px solid var(--border, rgba(120,120,120,0.15))',
+      borderRadius: 'var(--card-radius, 16px)',
+      overflow: 'hidden',
+      marginBottom: 8,
+    }}>
+      {/* Collapsible header */}
+      <button
+        onClick={() => setExpanded((v) => !v)}
+        style={{
+          width: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '12px 16px',
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+          color: 'var(--text)',
+        }}
+        aria-expanded={expanded}
+        aria-label="Toggle habit analytics"
+      >
+        <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-2)' }}>
+          📊 Habit Analytics
+        </span>
+        <span style={{ color: 'var(--text-3)', fontSize: 13 }}>
+          {expanded ? '▲' : '▼'}
+        </span>
+      </button>
+
+      <AnimatePresence>
+        {expanded && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            style={{ overflow: 'hidden' }}
+          >
+            <div style={{ padding: '0 16px 16px' }}>
+              {/* Section: Weekly Efficiency Bar */}
+              <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
+                Weekly Efficiency
+              </p>
+              <div style={{ display: 'flex', gap: 6, marginBottom: 16 }}>
+                {weeklyEfficiency.map(({ day, dateStr, ratio }, i) => (
+                  <div key={dateStr} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                    <div
+                      title={`${format(day, 'EEE MMM d')}: ${Math.round(ratio * 100)}%`}
+                      style={{
+                        width: '100%',
+                        aspectRatio: '1',
+                        borderRadius: 6,
+                        background: squareColor(ratio),
+                        transition: 'background 0.3s ease',
+                      }}
+                    />
+                    <span style={{ fontSize: 9, color: 'var(--text-3)', fontWeight: 600 }}>
+                      {DAY_LABELS[getDay(day) === 0 ? 6 : getDay(day) - 1]}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Section: Per-habit breakdown */}
+              <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
+                Per Habit · Last 7 Days
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {habitStats.map((h) => (
+                  <div key={h.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    {/* Emoji + name */}
+                    <span style={{ fontSize: 18, flexShrink: 0 }}>{h.emoji}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                        <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 90 }}>
+                          {h.name}
+                        </span>
+                        {h.streak > 0 && (
+                          <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--gold, #f5b342)', display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0 }}>
+                            🔥{h.streak}d
+                          </span>
+                        )}
+                        {h.pct14 < 30 && (
+                          <span style={{ fontSize: 9, fontWeight: 700, color: 'var(--gold, #f5b342)', background: 'rgba(245,179,66,0.12)', borderRadius: 99, padding: '1px 6px', flexShrink: 0 }}>
+                            Consider adjusting
+                          </span>
+                        )}
+                      </div>
+                      {/* 7-day mini dots */}
+                      <div style={{ display: 'flex', gap: 3, alignItems: 'center' }}>
+                        {h.dots.map((done, i) => (
+                          <div
+                            key={i}
+                            title={format(last7[i], 'EEE MMM d')}
+                            style={{
+                              width: 8, height: 8, borderRadius: '50%',
+                              background: done ? 'var(--success, #10b981)' : 'var(--surface-2, rgba(120,120,120,0.2))',
+                              border: done ? 'none' : '1.5px solid var(--border, rgba(120,120,120,0.25))',
+                              transition: 'background 0.2s',
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                    {/* 14-day completion % */}
+                    <span style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      flexShrink: 0,
+                      color: h.pct14 >= 70 ? 'var(--success, #10b981)' : h.pct14 >= 30 ? 'var(--gold, #f5b342)' : 'var(--danger, #f43f5e)',
+                    }}>
+                      {h.pct14}%
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Legend */}
+              <div style={{ display: 'flex', gap: 12, marginTop: 14, flexWrap: 'wrap' }}>
+                {[
+                  { color: 'var(--success, #10b981)', label: '100%' },
+                  { color: 'var(--gold, #f5b342)',    label: '50–99%' },
+                  { color: 'var(--danger, #f43f5e)',  label: '1–49%' },
+                  { color: 'var(--surface-2, rgba(120,120,120,0.2))', label: '0%', border: '1px solid var(--border)' },
+                ].map(({ color, label, border }) => (
+                  <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <div style={{ width: 10, height: 10, borderRadius: 3, background: color, border: border || 'none' }} />
+                    <span style={{ fontSize: 10, color: 'var(--text-3)' }}>{label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
 // ─── HABITS TAB ───────────────────────────────────────────────────────────────
 function HabitsTab() {
   const { habits, habitLogs, logHabit, resetHabitToday, addHabit, updateHabit, deleteHabit, getHabitStreak } = useStore()
@@ -1323,6 +1539,8 @@ function HabitsTab() {
 
   return (
     <div className="space-y-4">
+      <HabitAnalytics habits={habits} habitLogs={habitLogs} />
+
       {habits.length > 0 && (
         <Card className="p-4">
           <div className="flex items-center justify-between mb-2">
@@ -1507,14 +1725,83 @@ function HabitForm({ form, setForm, onSave, saveLabel = 'Add Habit' }) {
   )
 }
 
+// ─── MATRIX VIEW ──────────────────────────────────────────────────────────────
+function MatrixView({ tasks, onMoveTask }) {
+  const quadrants = [
+    { key: 'q1', label: 'Do First',   sublabel: 'Urgent + Important',         color: 'var(--danger, #f43f5e)',  bg: 'var(--warm-soft, rgba(255,107,107,0.08))' },
+    { key: 'q2', label: 'Schedule',   sublabel: 'Not Urgent + Important',      color: 'var(--accent, #3b82f6)', bg: 'var(--accent-soft, rgba(59,130,246,0.08))' },
+    { key: 'q3', label: 'Delegate',   sublabel: 'Urgent + Not Important',      color: 'var(--gold, #f5b342)',   bg: 'var(--gold-soft, rgba(245,179,66,0.08))' },
+    { key: 'q4', label: 'Eliminate',  sublabel: 'Not Urgent + Not Important',  color: 'var(--text-3)',          bg: 'var(--surface-2, rgba(120,120,120,0.08))' },
+  ]
+
+  const today = new Date()
+  const in3Days = addDays(today, 3)
+
+  const getQuadrant = (task) => {
+    const isHighPriority = task.priority === 'high'
+    const hasDue  = !!task.dueDate
+    const isUrgent = hasDue && isBefore(parseISO(task.dueDate), in3Days)
+    if (isHighPriority && isUrgent)  return 'q1'
+    if (isHighPriority && !isUrgent) return 'q2'
+    if (!isHighPriority && isUrgent) return 'q3'
+    return 'q4'
+  }
+
+  const tasksByQ = { q1: [], q2: [], q3: [], q4: [] }
+  tasks.filter((t) => t.status !== 'done').forEach((t) => {
+    tasksByQ[getQuadrant(t)].push(t)
+  })
+
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 12 }}>
+      {quadrants.map((q) => (
+        <div key={q.key} style={{
+          background: q.bg,
+          border: `1px solid ${q.color}33`,
+          borderRadius: 'var(--card-radius, 16px)',
+          padding: 12,
+          minHeight: 140,
+        }}>
+          <div style={{ borderBottom: `2px solid ${q.color}`, paddingBottom: 6, marginBottom: 10 }}>
+            <p style={{ color: q.color, fontSize: 12, fontWeight: 800 }}>{q.label}</p>
+            <p style={{ color: 'var(--text-3)', fontSize: 10 }}>{q.sublabel}</p>
+          </div>
+          {tasksByQ[q.key].length === 0 ? (
+            <p style={{ color: 'var(--text-3)', fontSize: 11, textAlign: 'center', marginTop: 20 }}>Empty</p>
+          ) : (
+            tasksByQ[q.key].map((task) => (
+              <motion.div
+                key={task.id}
+                initial={{ opacity: 0, x: -8 }}
+                animate={{ opacity: 1, x: 0 }}
+                style={{
+                  background: 'var(--surface)',
+                  borderRadius: 8,
+                  padding: '6px 10px',
+                  marginBottom: 6,
+                  fontSize: 12,
+                  color: 'var(--text)',
+                }}
+              >
+                {task.text || task.title || 'Untitled'}
+              </motion.div>
+            ))
+          )}
+        </div>
+      ))}
+    </div>
+  )
+}
+
 // ─── OFFICE / KANBAN TAB ──────────────────────────────────────────────────────
 function KanbanTab({ category }) {
   const { tasks, addTask, deleteTask, moveTask, updateTask } = useStore()
-  const [addModal,  setAddModal]  = useState(false)
-  const [detail,    setDetail]    = useState(null)
-  const [editMode,  setEditMode]  = useState(false)
-  const [form,      setForm]      = useState({ text: '', priority: 'med', dueDate: '' })
-  const [editForm,  setEditForm]  = useState({ text: '', priority: 'med', dueDate: '' })
+  const [addModal,    setAddModal]    = useState(false)
+  const [detail,      setDetail]      = useState(null)
+  const [editMode,    setEditMode]    = useState(false)
+  const [form,        setForm]        = useState({ text: '', priority: 'med', dueDate: '' })
+  const [editForm,    setEditForm]    = useState({ text: '', priority: 'med', dueDate: '' })
+  const [matrixMode,  setMatrixMode]  = useState(false)
 
   const items = tasks.filter((t) => t.category === category)
   const isOverdue = (t) => t.dueDate && t.status !== 'done' && isBefore(startOfDay(parseISO(t.dueDate)), startOfDay(new Date()))
@@ -1534,10 +1821,44 @@ function KanbanTab({ category }) {
 
   return (
     <div className="space-y-4">
-      <Btn size="lg" onClick={() => setAddModal(true)}><Plus size={18} /> Add Task</Btn>
+      {/* Header row: Add Task + Matrix/List toggle */}
+      <div style={{ display: 'flex', gap: 8, alignItems: 'stretch' }}>
+        <div style={{ flex: 1 }}>
+          <Btn size="lg" onClick={() => setAddModal(true)}><Plus size={18} /> Add Task</Btn>
+        </div>
+        <button
+          onClick={() => setMatrixMode((v) => !v)}
+          aria-label={matrixMode ? 'Switch to list view' : 'Switch to matrix view'}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '10px 14px',
+            borderRadius: 'var(--card-radius, 16px)',
+            border: '1.5px solid var(--border, rgba(120,120,120,0.2))',
+            background: matrixMode ? 'var(--accent, #3b82f6)' : 'var(--surface)',
+            color: matrixMode ? '#fff' : 'var(--text-2)',
+            fontSize: 13,
+            fontWeight: 700,
+            cursor: 'pointer',
+            flexShrink: 0,
+            transition: 'all 0.15s ease',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {matrixMode ? '📋 List' : '🎯 Matrix'}
+        </button>
+      </div>
+
       {items.length === 0 && <EmptyState icon={CheckCircle2} text="No tasks yet — add one above" />}
 
-      {STATUSES.map(({ key, label }) => {
+      {/* Matrix view */}
+      {matrixMode && items.length > 0 && (
+        <MatrixView tasks={items} onMoveTask={moveTask} />
+      )}
+
+      {/* List / Kanban columns */}
+      {!matrixMode && STATUSES.map(({ key, label }) => {
         const col = items.filter((t) => t.status === key)
         return (
           <div key={key}>

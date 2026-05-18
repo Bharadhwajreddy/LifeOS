@@ -78,9 +78,22 @@ export const useStore = create(
           t.id === id ? { ...t, ...(typeof patch === 'string' ? { text: patch } : patch) } : t
         ),
       })),
-      toggleDailyTask: (id) => set((s) => ({
-        dailyTasks: s.dailyTasks.map((t) => t.id === id ? { ...t, done: !t.done } : t),
-      })),
+      toggleDailyTask: (id) => set((s) => {
+        const task = s.dailyTasks.find((t) => t.id === id)
+        const wasNotDone = task && !task.done
+        const xpReward = wasNotDone ? (task.priority === 'high' ? 30 : task.priority === 'low' ? 10 : 20) : 0
+        const newXP = s.xp + xpReward
+        const THRESHOLDS = [0, 100, 250, 500, 1000, 2000, 4000, 8000, 16000, 32000]
+        let newLevel = 1
+        for (let i = THRESHOLDS.length - 1; i >= 0; i--) {
+          if (newXP >= THRESHOLDS[i]) { newLevel = i + 1; break }
+        }
+        return {
+          dailyTasks: s.dailyTasks.map((t) => t.id === id ? { ...t, done: !t.done } : t),
+          xp: wasNotDone ? newXP : s.xp,
+          level: wasNotDone ? Math.min(newLevel, 10) : s.level,
+        }
+      }),
       deleteDailyTask: (id) => set((s) => ({
         dailyTasks: s.dailyTasks.filter((t) => t.id !== id),
       })),
@@ -142,9 +155,18 @@ export const useStore = create(
         const existing = s.habitLogs.find((l) => l.habitId === habitId && l.date === todayStr)
         if (existing) {
           if (existing.count >= habit.target) return s
-          return { habitLogs: s.habitLogs.map((l) => l.habitId === habitId && l.date === todayStr ? { ...l, count: l.count + 1 } : l) }
+          const newCount = existing.count + 1
+          const hitTarget = newCount >= habit.target
+          return {
+            habitLogs: s.habitLogs.map((l) => l.habitId === habitId && l.date === todayStr ? { ...l, count: newCount } : l),
+            xp: hitTarget ? s.xp + 15 : s.xp,
+          }
         }
-        return { habitLogs: [...s.habitLogs, { habitId, date: todayStr, count: 1 }] }
+        const hitTarget = 1 >= habit.target
+        return {
+          habitLogs: [...s.habitLogs, { habitId, date: todayStr, count: 1 }],
+          xp: hitTarget ? s.xp + 15 : s.xp,
+        }
       }),
       resetHabitToday: (habitId) => set((s) => ({
         habitLogs: s.habitLogs.filter((l) => !(l.habitId === habitId && l.date === today())),
@@ -276,6 +298,9 @@ export const useStore = create(
       xp: 0,
       level: 1,
       achievements: [],  // array of { id, unlockedAt }
+      pendingAchievement: null,  // { id, name, description, xp, emoji } | null
+
+      dismissAchievement: () => set({ pendingAchievement: null }),
 
       addXP: (amount) => set((s) => {
         const newXP = s.xp + amount
@@ -288,9 +313,12 @@ export const useStore = create(
         return { xp: newXP, level: Math.min(newLevel, 10) }
       }),
 
-      unlockAchievement: (id) => set((s) => {
+      unlockAchievement: (id, meta = {}) => set((s) => {
         if (s.achievements.find((a) => a.id === id)) return s
-        return { achievements: [...s.achievements, { id, unlockedAt: format(new Date(), 'yyyy-MM-dd') }] }
+        return {
+          achievements: [...s.achievements, { id, unlockedAt: format(new Date(), 'yyyy-MM-dd') }],
+          pendingAchievement: { id, name: meta.name ?? id, description: meta.description ?? '', xp: meta.xp ?? null, emoji: meta.emoji ?? '🏆' },
+        }
       }),
 
       // ── Mood Log ─────────────────────────────────────────────────────────────

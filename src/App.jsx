@@ -8,6 +8,8 @@ import Tasks from './pages/Tasks'
 import Finance from './pages/Finance'
 import Her from './pages/Her'
 import Settings from './pages/Settings'
+import PomodoroWidget from './components/PomodoroWidget'
+import AchievementToast from './components/AchievementToast'
 
 function PageWrapper({ children }) {
   return (
@@ -24,7 +26,7 @@ function PageWrapper({ children }) {
 
 function AppInner() {
   const location = useLocation()
-  const { theme } = useStore()
+  const { theme, pendingAchievement, dismissAchievement } = useStore()
 
   // Apply data-theme attribute + remove old dark class (themes handle it)
   useEffect(() => {
@@ -51,6 +53,8 @@ function AppInner() {
         </AnimatePresence>
       </main>
       <BottomNav />
+      <PomodoroWidget />
+      <AchievementToast achievement={pendingAchievement} onDismiss={dismissAchievement} />
     </div>
   )
 }

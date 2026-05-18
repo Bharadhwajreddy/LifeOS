@@ -1,12 +1,33 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import {
   Moon, Sun, Trash2, Plus, Pencil, Check, X,
   Download, Upload, User, DollarSign,
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { format } from 'date-fns'
 import { useStore } from '../store'
 import { Card, Btn, Input, Select, SectionHeader } from '../components/UI'
 import Modal from '../components/Modal'
+
+function exportToCSV(data, filename) {
+  if (!data.length) return
+  const headers = Object.keys(data[0])
+  const rows = data.map(row =>
+    headers.map(h => {
+      const val = row[h] ?? ''
+      const str = String(val).replace(/"/g, '""')
+      return str.includes(',') || str.includes('"') || str.includes('\n') ? `"${str}"` : str
+    }).join(',')
+  )
+  const csv = [headers.join(','), ...rows].join('\n')
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(url)
+}
 
 function EditableItem({ name, onRename, onDelete, canDelete }) {
   const [editing, setEditing] = useState(false)
@@ -78,46 +99,135 @@ export default function Settings() {
     theme, setTheme,
     incomeSources, addIncomeSource, renameIncomeSource, deleteIncomeSource,
     expenseCategories, addExpenseCategory, renameExpenseCategory, deleteExpenseCategory,
+    dailyTasks, habits, habitLogs, transactions, xp, level,
+    appointments, tasks, movies, gifts, dates, dateIdeas, achievements, moodLog,
   } = useStore()
 
   const [nameVal, setNameVal] = useState(name)
   const [newSource, setNewSource] = useState('')
   const [newCat, setNewCat] = useState('')
   const [clearModal, setClearModal] = useState(false)
+  const [importSuccess, setImportSuccess] = useState(false)
+  const [importError, setImportError] = useState(false)
+  const [exportedTasks, setExportedTasks] = useState(false)
+  const [exportedHabits, setExportedHabits] = useState(false)
+  const [exportedFinance, setExportedFinance] = useState(false)
+  const [exportedBackup, setExportedBackup] = useState(false)
+  const fileRef = useRef(null)
 
   const initials = (name || 'U').split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase()
 
-  const handleExport = () => {
-    const data = localStorage.getItem('lifeos-v4') || '{}'
-    const blob = new Blob([data], { type: 'application/json' })
+  // ── CSV Export handlers ────────────────────────────────────────────────────
+
+  const handleExportTasks = () => {
+    const rows = dailyTasks.map(t => ({
+      date: t.date ?? t.createdAt ?? '',
+      text: t.text ?? '',
+      priority: t.priority ?? '',
+      done: t.done ? 'true' : 'false',
+      notes: t.notes ?? '',
+    }))
+    exportToCSV(rows, `lifeos-tasks-${format(new Date(), 'yyyy-MM-dd')}.csv`)
+    setExportedTasks(true)
+    setTimeout(() => setExportedTasks(false), 2000)
+  }
+
+  const handleExportHabits = () => {
+    const rows = habitLogs.map(log => {
+      const habit = habits.find(h => h.id === log.habitId)
+      return {
+        date: log.date ?? '',
+        habit: habit?.name ?? log.habitId,
+        emoji: habit?.emoji ?? '',
+        count: log.count ?? 0,
+        target: habit?.target ?? 1,
+        completed: (log.count ?? 0) >= (habit?.target ?? 1) ? 'true' : 'false',
+      }
+    })
+    if (!rows.length) {
+      // export habit definitions if no logs yet
+      const defs = habits.map(h => ({
+        id: h.id,
+        name: h.name,
+        emoji: h.emoji ?? '',
+        target: h.target ?? 1,
+        color: h.color ?? '',
+      }))
+      exportToCSV(defs, `lifeos-habits-${format(new Date(), 'yyyy-MM-dd')}.csv`)
+    } else {
+      exportToCSV(rows, `lifeos-habits-${format(new Date(), 'yyyy-MM-dd')}.csv`)
+    }
+    setExportedHabits(true)
+    setTimeout(() => setExportedHabits(false), 2000)
+  }
+
+  const handleExportFinance = () => {
+    const rows = transactions.map(t => ({
+      date: t.date ?? '',
+      type: t.type ?? '',
+      category: t.category ?? t.source ?? '',
+      amount: t.amount ?? 0,
+    }))
+    exportToCSV(rows, `lifeos-finance-${format(new Date(), 'yyyy-MM-dd')}.csv`)
+    setExportedFinance(true)
+    setTimeout(() => setExportedFinance(false), 2000)
+  }
+
+  // ── Full JSON backup ───────────────────────────────────────────────────────
+
+  const handleFullExport = () => {
+    const state = useStore.getState()
+    const exportData = {
+      dailyTasks: state.dailyTasks,
+      appointments: state.appointments,
+      tasks: state.tasks,
+      habits: state.habits,
+      habitLogs: state.habitLogs,
+      transactions: state.transactions,
+      movies: state.movies,
+      gifts: state.gifts,
+      dates: state.dates,
+      dateIdeas: state.dateIdeas,
+      xp: state.xp,
+      level: state.level,
+      achievements: state.achievements,
+      moodLog: state.moodLog ?? [],
+      exportedAt: new Date().toISOString(),
+      version: 'lifeos-v4',
+    }
+    const json = JSON.stringify(exportData, null, 2)
+    const blob = new Blob([json], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `lifeos-backup-${new Date().toISOString().slice(0, 10)}.json`
+    a.download = `lifeos-backup-${format(new Date(), 'yyyy-MM-dd')}.json`
     a.click()
     URL.revokeObjectURL(url)
+    setExportedBackup(true)
+    setTimeout(() => setExportedBackup(false), 2000)
   }
 
-  const handleImport = () => {
-    const input = document.createElement('input')
-    input.type = 'file'
-    input.accept = '.json'
-    input.onchange = (e) => {
-      const file = e.target.files[0]
-      if (!file) return
-      const reader = new FileReader()
-      reader.onload = (ev) => {
-        try {
-          JSON.parse(ev.target.result) // validate
-          localStorage.setItem('lifeos-v4', ev.target.result)
-          window.location.reload()
-        } catch {
-          alert('Invalid backup file.')
-        }
+  // ── JSON Import ────────────────────────────────────────────────────────────
+
+  const handleImport = (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      try {
+        const data = JSON.parse(ev.target.result)
+        if (data.dailyTasks) useStore.setState(s => ({ dailyTasks: [...s.dailyTasks, ...data.dailyTasks.filter(t => !s.dailyTasks.find(x => x.id === t.id))] }))
+        if (data.transactions) useStore.setState(s => ({ transactions: [...s.transactions, ...data.transactions.filter(t => !s.transactions.find(x => x.id === t.id))] }))
+        setImportSuccess(true)
+        setTimeout(() => setImportSuccess(false), 3000)
+      } catch {
+        setImportError(true)
+        setTimeout(() => setImportError(false), 3000)
       }
-      reader.readAsText(file)
     }
-    input.click()
+    reader.readAsText(file)
+    // reset input so same file can be re-imported
+    e.target.value = ''
   }
 
   const currencyInfo = CURRENCY_SYMBOLS[currency] ?? CURRENCY_SYMBOLS['$']
@@ -458,6 +568,156 @@ export default function Settings() {
         </Card>
       </section>
 
+      {/* Export Data */}
+      <section className="space-y-2">
+        <SectionHeader>Export Data</SectionHeader>
+        <div style={{
+          background: 'var(--surface)',
+          borderRadius: 'var(--card-radius)',
+          border: '1px solid var(--card-border)',
+          padding: 16,
+          display: 'flex', flexDirection: 'column', gap: 10,
+        }}>
+          <p style={{ fontSize: 13, color: 'var(--text-3)' }}>
+            Download your data as CSV spreadsheets or a full JSON backup.
+          </p>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {/* Export Tasks */}
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={handleExportTasks}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                padding: '10px 14px', borderRadius: 12,
+                background: exportedTasks
+                  ? 'color-mix(in srgb, var(--success, #22C55E) 15%, transparent)'
+                  : 'var(--accent-soft)',
+                border: exportedTasks
+                  ? '1px solid color-mix(in srgb, var(--success, #22C55E) 30%, transparent)'
+                  : '1px solid color-mix(in srgb, var(--accent) 20%, transparent)',
+                color: exportedTasks ? 'var(--success, #22C55E)' : 'var(--accent)',
+                fontWeight: 700, fontSize: 13, cursor: 'pointer',
+                transition: 'background 0.2s, color 0.2s, border 0.2s',
+              }}
+            >
+              <AnimatePresence mode="wait">
+                {exportedTasks ? (
+                  <motion.span key="check" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
+                    style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Check size={15} /> Exported!
+                  </motion.span>
+                ) : (
+                  <motion.span key="dl" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
+                    style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Download size={15} /> Export Tasks (CSV)
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </motion.button>
+
+            {/* Export Habits */}
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={handleExportHabits}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                padding: '10px 14px', borderRadius: 12,
+                background: exportedHabits
+                  ? 'color-mix(in srgb, var(--success, #22C55E) 15%, transparent)'
+                  : 'var(--accent-soft)',
+                border: exportedHabits
+                  ? '1px solid color-mix(in srgb, var(--success, #22C55E) 30%, transparent)'
+                  : '1px solid color-mix(in srgb, var(--accent) 20%, transparent)',
+                color: exportedHabits ? 'var(--success, #22C55E)' : 'var(--accent)',
+                fontWeight: 700, fontSize: 13, cursor: 'pointer',
+                transition: 'background 0.2s, color 0.2s, border 0.2s',
+              }}
+            >
+              <AnimatePresence mode="wait">
+                {exportedHabits ? (
+                  <motion.span key="check" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
+                    style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Check size={15} /> Exported!
+                  </motion.span>
+                ) : (
+                  <motion.span key="dl" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
+                    style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Download size={15} /> Export Habits (CSV)
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </motion.button>
+
+            {/* Export Finance */}
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={handleExportFinance}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                padding: '10px 14px', borderRadius: 12,
+                background: exportedFinance
+                  ? 'color-mix(in srgb, var(--success, #22C55E) 15%, transparent)'
+                  : 'var(--accent-soft)',
+                border: exportedFinance
+                  ? '1px solid color-mix(in srgb, var(--success, #22C55E) 30%, transparent)'
+                  : '1px solid color-mix(in srgb, var(--accent) 20%, transparent)',
+                color: exportedFinance ? 'var(--success, #22C55E)' : 'var(--accent)',
+                fontWeight: 700, fontSize: 13, cursor: 'pointer',
+                transition: 'background 0.2s, color 0.2s, border 0.2s',
+              }}
+            >
+              <AnimatePresence mode="wait">
+                {exportedFinance ? (
+                  <motion.span key="check" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
+                    style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Check size={15} /> Exported!
+                  </motion.span>
+                ) : (
+                  <motion.span key="dl" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
+                    style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Download size={15} /> Export Finance (CSV)
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </motion.button>
+
+            {/* Full JSON Backup */}
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={handleFullExport}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                padding: '10px 14px', borderRadius: 12,
+                background: exportedBackup
+                  ? 'color-mix(in srgb, var(--success, #22C55E) 15%, transparent)'
+                  : 'var(--surface)',
+                border: exportedBackup
+                  ? '1px solid color-mix(in srgb, var(--success, #22C55E) 30%, transparent)'
+                  : '1px solid var(--border)',
+                color: exportedBackup ? 'var(--success, #22C55E)' : 'var(--text-2)',
+                fontWeight: 700, fontSize: 13, cursor: 'pointer',
+                transition: 'background 0.2s, color 0.2s, border 0.2s',
+              }}
+            >
+              <AnimatePresence mode="wait">
+                {exportedBackup ? (
+                  <motion.span key="check" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
+                    style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Check size={15} /> Backup saved!
+                  </motion.span>
+                ) : (
+                  <motion.span key="dl" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
+                    style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Download size={15} /> Full Backup (JSON)
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </motion.button>
+          </div>
+        </div>
+      </section>
+
       {/* Data */}
       <section className="space-y-2">
         <SectionHeader>Data</SectionHeader>
@@ -470,34 +730,60 @@ export default function Settings() {
             All data lives on this device only. Nothing is sent to any server.
           </p>
 
-          <div style={{ display: 'flex', gap: 8 }}>
-            <motion.button
-              whileTap={{ scale: 0.95 }}
-              onClick={handleExport}
-              style={{
-                flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
-                padding: '10px 14px', borderRadius: 12,
-                background: 'var(--accent-soft)',
-                border: '1px solid color-mix(in srgb, var(--accent) 20%, transparent)',
-                color: 'var(--accent)', fontWeight: 700, fontSize: 13, cursor: 'pointer',
-              }}
-            >
-              <Download size={15} /> Export
-            </motion.button>
-            <motion.button
-              whileTap={{ scale: 0.95 }}
-              onClick={handleImport}
-              style={{
-                flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
-                padding: '10px 14px', borderRadius: 12,
-                background: 'var(--surface)',
-                border: '1px solid var(--border)',
-                color: 'var(--text-2)', fontWeight: 700, fontSize: 13, cursor: 'pointer',
-              }}
-            >
-              <Upload size={15} /> Import
-            </motion.button>
-          </div>
+          {/* Hidden file input for import */}
+          <input
+            ref={fileRef}
+            type="file"
+            accept=".json"
+            onChange={handleImport}
+            style={{ display: 'none' }}
+          />
+
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            onClick={() => fileRef.current?.click()}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+              padding: '10px 14px', borderRadius: 12,
+              background: importSuccess
+                ? 'color-mix(in srgb, var(--success, #22C55E) 15%, transparent)'
+                : importError
+                  ? 'color-mix(in srgb, var(--danger) 10%, transparent)'
+                  : 'var(--surface)',
+              border: importSuccess
+                ? '1px solid color-mix(in srgb, var(--success, #22C55E) 30%, transparent)'
+                : importError
+                  ? '1px solid color-mix(in srgb, var(--danger) 20%, transparent)'
+                  : '1px solid var(--border)',
+              color: importSuccess
+                ? 'var(--success, #22C55E)'
+                : importError
+                  ? 'var(--danger)'
+                  : 'var(--text-2)',
+              fontWeight: 700, fontSize: 13, cursor: 'pointer',
+              transition: 'background 0.2s, color 0.2s, border 0.2s',
+              width: '100%',
+            }}
+          >
+            <AnimatePresence mode="wait">
+              {importSuccess ? (
+                <motion.span key="ok" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <Check size={15} /> Import successful!
+                </motion.span>
+              ) : importError ? (
+                <motion.span key="err" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <X size={15} /> Invalid file
+                </motion.span>
+              ) : (
+                <motion.span key="up" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <Upload size={15} /> Import Backup (JSON)
+                </motion.span>
+              )}
+            </AnimatePresence>
+          </motion.button>
 
           <motion.button
             whileTap={{ scale: 0.97 }}
