@@ -342,6 +342,65 @@ export const useStore = create(
         totalSessions: 0,
       },
       setPomodoroState: (patch) => set((s) => ({ pomodoro: { ...s.pomodoro, ...patch } })),
+
+      // ── Recurring Tasks ───────────────────────────────────────────────────────
+      recurringTasks: [],
+      // Each: { id, text, recurrence: 'daily'|'weekly'|'monthly',
+      //         daysOfWeek: number[], dayOfMonth: number,
+      //         priority: 'high'|'med'|'low', notes: '', dueTime: '', active: true }
+      addRecurringTask: (task) => set((s) => ({
+        recurringTasks: [...s.recurringTasks, {
+          id: crypto.randomUUID(),
+          text: task.text || '',
+          recurrence: task.recurrence || 'daily',
+          daysOfWeek: task.daysOfWeek || [1,2,3,4,5],   // Mon–Fri default for weekly
+          dayOfMonth: task.dayOfMonth || 1,
+          priority: task.priority || 'med',
+          notes: task.notes || '',
+          dueTime: task.dueTime || '',
+          active: true,
+        }],
+      })),
+      updateRecurringTask: (id, patch) => set((s) => ({
+        recurringTasks: s.recurringTasks.map((r) => r.id === id ? { ...r, ...patch } : r),
+      })),
+      deleteRecurringTask: (id) => set((s) => ({
+        recurringTasks: s.recurringTasks.filter((r) => r.id !== id),
+      })),
+      generateDueTasks: () => set((s) => {
+        const todayStr = format(new Date(), 'yyyy-MM-dd')
+        const dayOfWeek = new Date().getDay()   // 0=Sun, 1=Mon...
+        const dayOfMonth = new Date().getDate()
+        const newTasks = []
+        for (const r of s.recurringTasks) {
+          if (!r.active) continue
+          // Skip if already generated today for this recurring task
+          const alreadyExists = s.dailyTasks.some(
+            (t) => t.recurringId === r.id && t.date === todayStr
+          )
+          if (alreadyExists) continue
+          // Check if due today
+          let due = false
+          if (r.recurrence === 'daily') due = true
+          else if (r.recurrence === 'weekly') due = (r.daysOfWeek || []).includes(dayOfWeek)
+          else if (r.recurrence === 'monthly') due = r.dayOfMonth === dayOfMonth
+          if (due) {
+            newTasks.push({
+              id: crypto.randomUUID(),
+              text: r.text,
+              date: todayStr,
+              priority: r.priority,
+              notes: r.notes || '',
+              dueTime: r.dueTime || '',
+              done: false,
+              createdAt: todayStr,
+              recurringId: r.id,  // link back to template
+            })
+          }
+        }
+        if (!newTasks.length) return s
+        return { dailyTasks: [...s.dailyTasks, ...newTasks] }
+      }),
     }),
     { name: 'lifeos-v4' }
   )

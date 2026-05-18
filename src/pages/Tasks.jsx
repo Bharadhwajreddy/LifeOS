@@ -5,7 +5,7 @@ import {
   Plus, Trash2, Circle, CheckCircle2, ChevronRight, Flame, Pencil, Check, X,
   ArrowLeft, FileText, Paperclip, FolderOpen, ChevronDown, ChevronUp,
   Bell, BellOff, MapPin, Link2, Star, Calendar, Clock, AlertTriangle,
-  CalendarDays,
+  CalendarDays, Repeat,
 } from 'lucide-react'
 import {
   format, parseISO, startOfDay, isBefore, isToday, isTomorrow,
@@ -633,12 +633,195 @@ function AppointmentModal({ open, onClose, initial = null, onSave, defaultDate =
   )
 }
 
+// ─── RECURRING SECTION ───────────────────────────────────────────────────────
+const DAYS_SHORT = ['Su','Mo','Tu','We','Th','Fr','Sa']
+
+function RecurringSection() {
+  const { recurringTasks, addRecurringTask, updateRecurringTask, deleteRecurringTask } = useStore()
+  const [open, setOpen] = useState(false)
+  const [showAdd, setShowAdd] = useState(false)
+  const [editId, setEditId] = useState(null)
+  const [form, setForm] = useState({ text:'', recurrence:'daily', daysOfWeek:[1,2,3,4,5], dayOfMonth:1, priority:'med', dueTime:'', notes:'' })
+
+  const resetForm = () => setForm({ text:'', recurrence:'daily', daysOfWeek:[1,2,3,4,5], dayOfMonth:1, priority:'med', dueTime:'', notes:'' })
+
+  const handleSave = () => {
+    if (!form.text.trim()) return
+    if (editId) {
+      updateRecurringTask(editId, form)
+      setEditId(null)
+    } else {
+      addRecurringTask(form)
+    }
+    resetForm()
+    setShowAdd(false)
+  }
+
+  const handleEdit = (r) => {
+    setForm({ text: r.text, recurrence: r.recurrence, daysOfWeek: r.daysOfWeek || [1,2,3,4,5], dayOfMonth: r.dayOfMonth || 1, priority: r.priority, dueTime: r.dueTime || '', notes: r.notes || '' })
+    setEditId(r.id)
+    setShowAdd(true)
+  }
+
+  const toggleDay = (d) => {
+    setForm((f) => ({
+      ...f,
+      daysOfWeek: f.daysOfWeek.includes(d) ? f.daysOfWeek.filter((x) => x !== d) : [...f.daysOfWeek, d],
+    }))
+  }
+
+  const recurrenceLabel = (r) => {
+    if (r.recurrence === 'daily') return 'Every day'
+    if (r.recurrence === 'weekly') {
+      const days = (r.daysOfWeek || []).sort().map((d) => DAYS_SHORT[d]).join(', ')
+      return `Weekly: ${days || 'no days'}`
+    }
+    return `Monthly on day ${r.dayOfMonth}`
+  }
+
+  return (
+    <div style={{ marginBottom: 16 }}>
+      {/* Header toggle */}
+      <motion.button
+        onClick={() => setOpen((v) => !v)}
+        style={{ display:'flex', alignItems:'center', gap:8, width:'100%', background:'none', border:'none', cursor:'pointer', padding:'8px 0', color:'var(--text-muted)' }}
+        whileTap={{ scale: 0.97 }}
+      >
+        <Repeat size={14} />
+        <span style={{ fontSize:12, fontWeight:600, letterSpacing:'0.06em', textTransform:'uppercase' }}>
+          Recurring ({recurringTasks.filter(r=>r.active).length})
+        </span>
+        <motion.span animate={{ rotate: open ? 180 : 0 }} style={{ marginLeft:'auto' }}>
+          <ChevronDown size={14} />
+        </motion.span>
+      </motion.button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            style={{ overflow: 'hidden' }}
+          >
+            {/* Recurring task list */}
+            {recurringTasks.map((r) => (
+              <motion.div key={r.id} layout
+                style={{ display:'flex', alignItems:'center', gap:8, padding:'8px 10px', marginBottom:6, borderRadius:10, background:'var(--surface)', border:'1px solid var(--border)' }}
+              >
+                <Repeat size={13} style={{ color:'var(--accent)', flexShrink:0 }} />
+                <div style={{ flex:1, minWidth:0 }}>
+                  <div style={{ fontSize:13, fontWeight:600, color:'var(--text)', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{r.text}</div>
+                  <div style={{ fontSize:11, color:'var(--text-muted)', marginTop:1 }}>{recurrenceLabel(r)}</div>
+                </div>
+                <motion.button whileTap={{scale:0.9}} onClick={() => handleEdit(r)}
+                  style={{ background:'none', border:'none', cursor:'pointer', padding:4, color:'var(--text-muted)' }}>
+                  <Pencil size={13} />
+                </motion.button>
+                <motion.button whileTap={{scale:0.9}} onClick={() => deleteRecurringTask(r.id)}
+                  style={{ background:'none', border:'none', cursor:'pointer', padding:4, color:'var(--danger)' }}>
+                  <Trash2 size={13} />
+                </motion.button>
+              </motion.div>
+            ))}
+
+            {/* Add form toggle */}
+            {!showAdd ? (
+              <motion.button
+                onClick={() => { setShowAdd(true); setEditId(null); resetForm() }}
+                style={{ display:'flex', alignItems:'center', gap:6, padding:'6px 10px', borderRadius:10, background:'none', border:'1px dashed var(--border)', cursor:'pointer', color:'var(--accent)', fontSize:12, fontWeight:600, width:'100%', marginTop:4 }}
+                whileTap={{ scale: 0.97 }}
+              >
+                <Plus size={13} /> Add recurring task
+              </motion.button>
+            ) : (
+              <motion.div
+                initial={{ opacity:0, y:6 }} animate={{ opacity:1, y:0 }}
+                style={{ padding:12, borderRadius:12, background:'var(--surface)', border:'1px solid var(--accent)', marginTop:6 }}
+              >
+                <input value={form.text} onChange={(e) => setForm((f) => ({...f, text:e.target.value}))}
+                  placeholder="Task name…"
+                  style={{ width:'100%', background:'var(--input-bg, var(--surface))', border:'1px solid var(--border)', borderRadius:8, padding:'8px 10px', fontSize:14, color:'var(--text)', outline:'none', marginBottom:8, boxSizing:'border-box' }}
+                />
+
+                {/* Recurrence type */}
+                <div style={{ display:'flex', gap:6, marginBottom:8 }}>
+                  {['daily','weekly','monthly'].map((rec) => (
+                    <motion.button key={rec} whileTap={{scale:0.95}}
+                      onClick={() => setForm((f) => ({...f, recurrence:rec}))}
+                      style={{ flex:1, padding:'5px 0', borderRadius:8, border:'1px solid var(--border)', background: form.recurrence===rec ? 'var(--accent)' : 'var(--surface)', color: form.recurrence===rec ? 'white' : 'var(--text-muted)', fontSize:11, fontWeight:600, cursor:'pointer', textTransform:'capitalize' }}
+                    >{rec}</motion.button>
+                  ))}
+                </div>
+
+                {/* Day-of-week picker for weekly */}
+                {form.recurrence === 'weekly' && (
+                  <div style={{ display:'flex', gap:4, marginBottom:8 }}>
+                    {DAYS_SHORT.map((label, idx) => (
+                      <motion.button key={idx} whileTap={{scale:0.9}}
+                        onClick={() => toggleDay(idx)}
+                        style={{ flex:1, height:32, borderRadius:8, border:'1px solid var(--border)', background: form.daysOfWeek.includes(idx) ? 'var(--accent)' : 'var(--surface)', color: form.daysOfWeek.includes(idx) ? 'white' : 'var(--text-muted)', fontSize:11, fontWeight:700, cursor:'pointer' }}
+                      >{label}</motion.button>
+                    ))}
+                  </div>
+                )}
+
+                {/* Day of month for monthly */}
+                {form.recurrence === 'monthly' && (
+                  <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8 }}>
+                    <span style={{ fontSize:12, color:'var(--text-muted)' }}>Day of month:</span>
+                    <input type="number" min={1} max={31} value={form.dayOfMonth}
+                      onChange={(e) => setForm((f) => ({...f, dayOfMonth: parseInt(e.target.value)||1}))}
+                      style={{ width:60, padding:'5px 8px', borderRadius:8, border:'1px solid var(--border)', background:'var(--surface)', color:'var(--text)', fontSize:13, outline:'none' }}
+                    />
+                  </div>
+                )}
+
+                {/* Priority */}
+                <div style={{ display:'flex', gap:6, marginBottom:8 }}>
+                  {['high','med','low'].map((p) => (
+                    <motion.button key={p} whileTap={{scale:0.95}}
+                      onClick={() => setForm((f) => ({...f, priority:p}))}
+                      style={{ flex:1, padding:'5px 0', borderRadius:8, border:'1px solid var(--border)', background: form.priority===p ? 'var(--accent)' : 'var(--surface)', color: form.priority===p ? 'white' : 'var(--text-muted)', fontSize:11, fontWeight:600, cursor:'pointer', textTransform:'capitalize' }}
+                    >{p}</motion.button>
+                  ))}
+                </div>
+
+                {/* Time */}
+                <input type="time" value={form.dueTime}
+                  onChange={(e) => setForm((f) => ({...f, dueTime:e.target.value}))}
+                  style={{ width:'100%', padding:'6px 10px', borderRadius:8, border:'1px solid var(--border)', background:'var(--surface)', color:'var(--text)', fontSize:13, outline:'none', marginBottom:8, boxSizing:'border-box' }}
+                />
+
+                {/* Actions */}
+                <div style={{ display:'flex', gap:8 }}>
+                  <motion.button whileTap={{scale:0.95}} onClick={handleSave}
+                    style={{ flex:1, padding:'8px 0', borderRadius:10, background:'var(--accent)', color:'white', border:'none', fontSize:13, fontWeight:700, cursor:'pointer' }}
+                  >{editId ? 'Save' : 'Add'}</motion.button>
+                  <motion.button whileTap={{scale:0.95}} onClick={() => { setShowAdd(false); setEditId(null); resetForm() }}
+                    style={{ padding:'8px 16px', borderRadius:10, background:'var(--surface)', color:'var(--text-muted)', border:'1px solid var(--border)', fontSize:13, cursor:'pointer' }}
+                  >Cancel</motion.button>
+                </div>
+              </motion.div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
 // ─── TODAY TAB ────────────────────────────────────────────────────────────────
 function TodayTab() {
   const {
     dailyTasks, addDailyTask, updateDailyTask, toggleDailyTask, deleteDailyTask,
     appointments, addAppointment, updateAppointment, deleteAppointment,
+    generateDueTasks,
   } = useStore()
+
+  useEffect(() => {
+    generateDueTasks()
+  }, [])
 
   const { permission, requestPermission } = useReminders(appointments)
 
@@ -803,6 +986,9 @@ function TodayTab() {
           ))}
         </div>
       )}
+
+      {/* Recurring tasks section */}
+      <RecurringSection />
 
       {/* Today's tasks */}
       {todayTasks.length > 0 && (
