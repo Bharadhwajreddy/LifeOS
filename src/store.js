@@ -271,6 +271,49 @@ export const useStore = create(
       toggleDarkMode: () => set((s) => ({ darkMode: !s.darkMode })),
       setTheme: (theme) => set({ theme }),
       setCurrency: (currency) => set({ currency }),
+
+      // ── Gamification ─────────────────────────────────────────────────────────
+      xp: 0,
+      level: 1,
+      achievements: [],  // array of { id, unlockedAt }
+
+      addXP: (amount) => set((s) => {
+        const newXP = s.xp + amount
+        // Level thresholds: 100, 250, 500, 1000, 2000, 4000, 8000...
+        const THRESHOLDS = [0, 100, 250, 500, 1000, 2000, 4000, 8000, 16000, 32000]
+        let newLevel = 1
+        for (let i = THRESHOLDS.length - 1; i >= 0; i--) {
+          if (newXP >= THRESHOLDS[i]) { newLevel = i + 1; break }
+        }
+        return { xp: newXP, level: Math.min(newLevel, 10) }
+      }),
+
+      unlockAchievement: (id) => set((s) => {
+        if (s.achievements.find((a) => a.id === id)) return s
+        return { achievements: [...s.achievements, { id, unlockedAt: format(new Date(), 'yyyy-MM-dd') }] }
+      }),
+
+      // ── Mood Log ─────────────────────────────────────────────────────────────
+      moodLog: [],  // [{ date: 'YYYY-MM-DD', mood: 1|2|3|4|5 }]
+      logMood: (mood) => set((s) => {
+        const todayStr = format(new Date(), 'yyyy-MM-dd')
+        const existing = s.moodLog.find((m) => m.date === todayStr)
+        if (existing) {
+          return { moodLog: s.moodLog.map((m) => m.date === todayStr ? { ...m, mood } : m) }
+        }
+        return { moodLog: [...s.moodLog, { date: todayStr, mood }] }
+      }),
+
+      // ── Pomodoro ──────────────────────────────────────────────────────────────
+      pomodoro: {
+        active: false,
+        taskId: null,
+        taskLabel: '',
+        mode: 'work',       // 'work' | 'short_break' | 'long_break'
+        seconds: 25 * 60,  // remaining seconds
+        totalSessions: 0,
+      },
+      setPomodoroState: (patch) => set((s) => ({ pomodoro: { ...s.pomodoro, ...patch } })),
     }),
     { name: 'lifeos-v4' }
   )
