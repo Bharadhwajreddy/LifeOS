@@ -15,7 +15,7 @@ export default function BottomNav() {
   return (
     <nav
       className="fixed bottom-0 left-0 right-0 z-50 px-4"
-      style={{ paddingBottom: 'max(16px, env(safe-area-inset-bottom))' }}
+      style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 8px)' }}
     >
       <div style={{
         background: 'var(--nav-bg)',

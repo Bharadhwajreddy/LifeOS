@@ -28,3 +28,33 @@
   .theme-border    { border-color: var(--border); }
   .theme-shadow-md { box-shadow: var(--shadow-md); }
 }
+
+/* ── Mobile Polish ──────────────────────────────────────────── */
+
+/* Prevent horizontal scroll on mobile */
+html, body {
+  overflow-x: hidden;
+  overscroll-behavior-y: contain;
+}
+
+/* Minimum touch target size for all interactive elements */
+button, [role="button"], a {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Allow small icon buttons to override with auto */
+.touch-target-sm {
+  min-height: auto;
+  min-width: auto;
+}
+
+/* Smooth momentum scrolling on iOS */
+.scroll-smooth-ios {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Safe area padding utility */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
