@@ -10,6 +10,8 @@ import Her from './pages/Her'
 import Settings from './pages/Settings'
 import PomodoroWidget from './components/PomodoroWidget'
 import AchievementToast from './components/AchievementToast'
+import XPFloater from './components/XPFloater'
+import LevelUpModal from './components/LevelUpModal'
 
 function PageWrapper({ children }) {
   return (
@@ -55,6 +57,8 @@ function AppInner() {
       <BottomNav />
       <PomodoroWidget />
       <AchievementToast achievement={pendingAchievement} onDismiss={dismissAchievement} />
+      <LevelUpModal />
+      <XPFloater />
     </div>
   )
 }

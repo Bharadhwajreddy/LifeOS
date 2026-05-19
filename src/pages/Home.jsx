@@ -212,7 +212,7 @@ export default function Home() {
   const {
     name, dailyTasks, tasks, appointments, transactions, gifts, dates, currency, habits, habitLogs, getHabitStreak,
     dailyChallenge, generateDailyChallenge, completeDailyChallenge,
-    notificationsEnabled, reminderTime,
+    notificationsEnabled, reminderTime, xp, moodLog,
   } = useStore()
   const navigate = useNavigate()
 
@@ -608,7 +608,6 @@ export default function Home() {
             return habit && l.count >= habit.target
           }).length
 
-          const { xp, moodLog } = useStore.getState()
           const latestMood = (moodLog ?? []).slice().sort((a, b) => b.date.localeCompare(a.date))[0]
           const moodEmojis = { 1: '😞', 2: '😕', 3: '😐', 4: '😊', 5: '🤩' }
 

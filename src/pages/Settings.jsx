@@ -101,6 +101,7 @@ export default function Settings() {
     expenseCategories, addExpenseCategory, renameExpenseCategory, deleteExpenseCategory,
     dailyTasks, habits, habitLogs, transactions, xp, level,
     appointments, tasks, movies, gifts, dates, dateIdeas, achievements, moodLog,
+    notificationsEnabled, setNotificationsEnabled, reminderTime, setReminderTime,
   } = useStore()
 
   const [nameVal, setNameVal] = useState(name)
@@ -566,6 +567,118 @@ export default function Settings() {
             </button>
           </div>
         </Card>
+      </section>
+
+      {/* Habit Reminders / Notifications */}
+      <section className="space-y-2">
+        <SectionHeader>Reminders</SectionHeader>
+        <div style={{ padding: '16px', borderRadius: 16, background: 'var(--surface)', border: '1px solid var(--border)', marginBottom: 0 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 12 }}>🔔 Habit Reminders</div>
+
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <span style={{ fontSize: 13, color: 'var(--text)' }}>Enable notifications</span>
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              onClick={async () => {
+                if (!(notificationsEnabled ?? false)) {
+                  const perm = await Notification.requestPermission()
+                  if (perm === 'granted') setNotificationsEnabled(true)
+                } else {
+                  setNotificationsEnabled(false)
+                }
+              }}
+              style={{
+                width: 44, height: 24, borderRadius: 12,
+                background: (notificationsEnabled ?? false) ? 'var(--accent)' : 'var(--border)',
+                border: 'none', cursor: 'pointer', position: 'relative', transition: 'background 0.2s',
+              }}
+            >
+              <motion.div
+                animate={{ x: (notificationsEnabled ?? false) ? 20 : 2 }}
+                style={{ width: 20, height: 20, borderRadius: 10, background: 'white', position: 'absolute', top: 2 }}
+              />
+            </motion.button>
+          </div>
+
+          {(notificationsEnabled ?? false) && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>Reminder time</span>
+              <input type="time" value={reminderTime ?? '09:00'}
+                onChange={(e) => setReminderTime(e.target.value)}
+                style={{ padding: '4px 8px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: 13, outline: 'none' }}
+              />
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Google Sheets Backup */}
+      <section className="space-y-2">
+        <SectionHeader>Cloud Backup</SectionHeader>
+        <div style={{ padding: '16px', borderRadius: 16, background: 'var(--surface)', border: '1px solid var(--border)', marginBottom: 0 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>☁️ Google Sheets Backup</div>
+          <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 12, lineHeight: 1.5 }}>
+            Export your data as CSV files you can import into Google Sheets (free, no setup needed).
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={handleExportTasks}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                padding: '10px 14px', borderRadius: 12,
+                background: exportedTasks ? 'color-mix(in srgb, var(--success) 15%, transparent)' : 'var(--accent-soft)',
+                border: exportedTasks ? '1px solid color-mix(in srgb, var(--success) 30%, transparent)' : '1px solid color-mix(in srgb, var(--accent) 20%, transparent)',
+                color: exportedTasks ? 'var(--success)' : 'var(--accent)',
+                fontWeight: 700, fontSize: 13, cursor: 'pointer',
+              }}
+            >
+              <Download size={15} />
+              {exportedTasks ? 'Tasks exported!' : 'Export Tasks (CSV)'}
+            </motion.button>
+
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={handleExportHabits}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                padding: '10px 14px', borderRadius: 12,
+                background: exportedHabits ? 'color-mix(in srgb, var(--success) 15%, transparent)' : 'var(--accent-soft)',
+                border: exportedHabits ? '1px solid color-mix(in srgb, var(--success) 30%, transparent)' : '1px solid color-mix(in srgb, var(--accent) 20%, transparent)',
+                color: exportedHabits ? 'var(--success)' : 'var(--accent)',
+                fontWeight: 700, fontSize: 13, cursor: 'pointer',
+              }}
+            >
+              <Download size={15} />
+              {exportedHabits ? 'Habits exported!' : 'Export Habits (CSV)'}
+            </motion.button>
+
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={handleExportFinance}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                padding: '10px 14px', borderRadius: 12,
+                background: exportedFinance ? 'color-mix(in srgb, var(--success) 15%, transparent)' : 'var(--accent-soft)',
+                border: exportedFinance ? '1px solid color-mix(in srgb, var(--success) 30%, transparent)' : '1px solid color-mix(in srgb, var(--accent) 20%, transparent)',
+                color: exportedFinance ? 'var(--success)' : 'var(--accent)',
+                fontWeight: 700, fontSize: 13, cursor: 'pointer',
+              }}
+            >
+              <Download size={15} />
+              {exportedFinance ? 'Finance exported!' : 'Export Finance (CSV)'}
+            </motion.button>
+          </div>
+
+          <div style={{ fontSize: 12, color: 'var(--text-3)', padding: '10px', borderRadius: 10, background: 'var(--bg)', border: '1px dashed var(--border)', lineHeight: 1.6 }}>
+            <strong style={{ color: 'var(--text)' }}>How to sync to Google Sheets:</strong><br />
+            1. Export CSV below<br />
+            2. Open sheets.google.com → New Sheet<br />
+            3. File → Import → Upload the CSV<br />
+            4. Repeat anytime to refresh your data
+          </div>
+        </div>
       </section>
 
       {/* Export Data */}
