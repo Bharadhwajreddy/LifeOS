@@ -13,6 +13,8 @@ import { useStore } from '../store'
 import { useNavigate } from 'react-router-dom'
 import XPBar from '../components/XPBar'
 import MoodCheckIn from '../components/MoodCheckIn'
+import WeatherWidget from '../components/WeatherWidget'
+import DailyQuote from '../components/DailyQuote'
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -207,7 +209,11 @@ function EfficiencyPanel() {
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function Home() {
-  const { name, dailyTasks, tasks, appointments, transactions, gifts, dates, currency, habits, habitLogs, getHabitStreak } = useStore()
+  const {
+    name, dailyTasks, tasks, appointments, transactions, gifts, dates, currency, habits, habitLogs, getHabitStreak,
+    dailyChallenge, generateDailyChallenge, completeDailyChallenge,
+    notificationsEnabled, reminderTime,
+  } = useStore()
   const navigate = useNavigate()
 
   // Live clock
@@ -216,6 +222,28 @@ export default function Home() {
     const t = setInterval(() => setNow(new Date()), 60_000)
     return () => clearInterval(t)
   }, [])
+
+  // Generate daily challenge on mount
+  useEffect(() => { generateDailyChallenge() }, [])
+
+  // Schedule browser notification reminder for habits
+  useEffect(() => {
+    if (!(notificationsEnabled ?? false) || !(reminderTime ?? '09:00')) return
+    const [h, m] = (reminderTime ?? '09:00').split(':').map(Number)
+    const target = new Date()
+    target.setHours(h, m, 0, 0)
+    if (target < new Date()) target.setDate(target.getDate() + 1)
+    const ms = target - new Date()
+    const timer = setTimeout(() => {
+      if (Notification.permission === 'granted') {
+        new Notification('LifeOS — Habit Reminder 💪', {
+          body: 'Time to check your habits for today!',
+          icon: '/pwa-192x192.png',
+        })
+      }
+    }, ms)
+    return () => clearTimeout(timer)
+  }, [notificationsEnabled, reminderTime])
 
   const todayStr = format(now, 'yyyy-MM-dd')
   const thisMonth = format(now, 'yyyy-MM')
@@ -456,6 +484,38 @@ export default function Home() {
         <XPBar />
       </motion.div>
 
+      {/* ── Weather + Quote ── */}
+      <motion.div {...fadeUp(0.065)} className="space-y-2">
+        <WeatherWidget />
+        <DailyQuote />
+      </motion.div>
+
+      {/* ── Daily Challenge Card ── */}
+      {dailyChallenge && (
+        <motion.div
+          {...fadeUp(0.07)}
+          style={{ padding: '14px 16px', borderRadius: 16, background: 'var(--surface)', border: '1px solid var(--border)', marginBottom: 0 }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+            <span style={{ fontSize: 18 }}>⚔️</span>
+            <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Daily Challenge</span>
+            <span style={{ marginLeft: 'auto', fontSize: 11, fontWeight: 700, color: 'var(--gold, #F5B342)' }}>+{dailyChallenge.xpReward} XP</span>
+          </div>
+          <p style={{ fontSize: 14, color: 'var(--text)', margin: '0 0 10px', lineHeight: 1.4 }}>{dailyChallenge.text}</p>
+          {!dailyChallenge.completed ? (
+            <motion.button whileTap={{ scale: 0.95 }}
+              onClick={completeDailyChallenge}
+              style={{ width: '100%', padding: '8px 0', borderRadius: 10, background: 'var(--accent)', color: 'white', border: 'none', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
+            >Complete Challenge ✓</motion.button>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--success)' }}>
+              <span>✅</span>
+              <span style={{ fontSize: 13, fontWeight: 600 }}>Challenge Complete! +{dailyChallenge.xpReward} XP earned</span>
+            </div>
+          )}
+        </motion.div>
+      )}
+
       {/* ══════════════════════════════════════════════════
           7-DAY CALENDAR STRIP
       ══════════════════════════════════════════════════ */}
@@ -525,6 +585,167 @@ export default function Home() {
           emoji="🏆"
           delay={0.2}
         />
+      </motion.div>
+
+      {/* ══════════════════════════════════════════════════
+          WEEKLY STATS CARD
+      ══════════════════════════════════════════════════ */}
+      <motion.div {...fadeUp(0.13)}>
+        {(() => {
+          // Compute this week's dates (Mon–Sun containing today)
+          const dayOfWeek = now.getDay() // 0=Sun
+          const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek
+          const weekStart = format(addDays(now, mondayOffset), 'yyyy-MM-dd')
+          const weekEnd = format(addDays(now, mondayOffset + 6), 'yyyy-MM-dd')
+          const weekDates = []
+          for (let i = 0; i <= 6; i++) weekDates.push(format(addDays(new Date(weekStart), i), 'yyyy-MM-dd'))
+
+          const weekTasksDone = dailyTasks.filter((t) => weekDates.includes(t.date) && t.done).length
+          const weekTasksTotal = dailyTasks.filter((t) => weekDates.includes(t.date)).length
+          const weekHabitsHit = habitLogs.filter((l) => {
+            if (!weekDates.includes(l.date)) return false
+            const habit = habits.find((h) => h.id === l.habitId)
+            return habit && l.count >= habit.target
+          }).length
+
+          const { xp, moodLog } = useStore.getState()
+          const latestMood = (moodLog ?? []).slice().sort((a, b) => b.date.localeCompare(a.date))[0]
+          const moodEmojis = { 1: '😞', 2: '😕', 3: '😐', 4: '😊', 5: '🤩' }
+
+          const miniStats = [
+            { label: 'Tasks done', value: weekTasksDone, icon: '✅', suffix: `/${weekTasksTotal}` },
+            { label: 'Habits hit', value: weekHabitsHit, icon: '🔥', suffix: '' },
+            { label: 'Total XP', value: xp ?? 0, icon: '⚡', suffix: '' },
+            { label: 'Mood', value: latestMood ? moodEmojis[latestMood.mood] : '—', icon: '💭', isEmoji: true },
+          ]
+
+          return (
+            <div>
+              <p style={{ color: 'var(--text-3)', fontFamily: 'var(--font-sans)' }} className="text-[10px] font-bold uppercase tracking-widest mb-2.5 px-0.5">
+                This week
+              </p>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {miniStats.map((s, i) => (
+                  <motion.div
+                    key={s.label}
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.13 + i * 0.05, duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                    style={{
+                      flex: 1,
+                      background: 'var(--surface)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 'var(--card-radius)',
+                      padding: '10px 8px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: 2,
+                      textAlign: 'center',
+                    }}
+                  >
+                    <span style={{ fontSize: 18, lineHeight: 1 }}>{s.icon}</span>
+                    <span style={{ color: 'var(--text)', fontSize: s.isEmoji ? 18 : 15, fontWeight: 900, lineHeight: 1.1, fontFamily: 'var(--font-sans)' }}>
+                      {s.isEmoji ? s.value : <>{s.value}<span style={{ color: 'var(--text-muted)', fontSize: 11 }}>{s.suffix}</span></>}
+                    </span>
+                    <span style={{ color: 'var(--text-muted)', fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{s.label}</span>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          )
+        })()}
+      </motion.div>
+
+      {/* ══════════════════════════════════════════════════
+          BOSS BATTLE CARD
+      ══════════════════════════════════════════════════ */}
+      <motion.div {...fadeUp(0.135)}>
+        {(() => {
+          const dayOfWeek = now.getDay()
+          const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek
+          const weekStart = format(addDays(now, mondayOffset), 'yyyy-MM-dd')
+          const weekDates = []
+          for (let i = 0; i <= 6; i++) weekDates.push(format(addDays(new Date(weekStart), i), 'yyyy-MM-dd'))
+          const weekTasksAll = dailyTasks.filter((t) => weekDates.includes(t.date))
+          const weekDone = weekTasksAll.filter((t) => t.done).length
+          const weekTotal = weekTasksAll.length
+          const pct = weekTotal > 0 ? Math.round((weekDone / weekTotal) * 100) : 0
+          const bossHp = 100 - pct
+          const left = weekTotal - weekDone
+
+          let statusEmoji, statusText, statusColor
+          if (pct >= 80) {
+            statusEmoji = '🏆'
+            statusText = 'Boss Defeated! You crushed it this week!'
+            statusColor = 'var(--success)'
+          } else if (pct >= 50) {
+            statusEmoji = '⚔️'
+            statusText = `Boss is weak! Keep going... ${left} task${left !== 1 ? 's' : ''} left`
+            statusColor = 'var(--gold, #F5B342)'
+          } else {
+            statusEmoji = '💀'
+            statusText = 'Boss Challenge: Complete 80% of tasks to win!'
+            statusColor = 'var(--danger)'
+          }
+
+          return (
+            <div style={{
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--card-radius)',
+              padding: '14px 16px',
+              overflow: 'hidden',
+              position: 'relative',
+            }}>
+              {/* Background boss shadow */}
+              <div style={{ position: 'absolute', right: -10, top: -10, fontSize: 80, opacity: 0.05, pointerEvents: 'none', userSelect: 'none', lineHeight: 1 }}>👹</div>
+
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                <div>
+                  <p style={{ color: 'var(--text-muted)', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 2 }}>Weekly Boss Battle</p>
+                  <p style={{ color: statusColor, fontSize: 12, fontWeight: 700, lineHeight: 1.3 }}>
+                    {statusEmoji} {statusText}
+                  </p>
+                </div>
+                {/* Wobbling boss emoji */}
+                <motion.div
+                  animate={pct < 80 ? { rotate: [-5, 5, -5, 5, 0], scale: [1, 1.05, 1] } : { scale: [1, 0.9, 1] }}
+                  transition={{ duration: pct < 80 ? 0.8 : 1.5, repeat: Infinity, ease: 'easeInOut' }}
+                  style={{ fontSize: 36, lineHeight: 1, flexShrink: 0, marginLeft: 8 }}
+                >
+                  {pct >= 80 ? '💀' : '👹'}
+                </motion.div>
+              </div>
+
+              {/* Boss HP bar */}
+              <div style={{ marginBottom: 4 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <span style={{ color: 'var(--text-muted)', fontSize: 10, fontWeight: 700 }}>Boss HP</span>
+                  <span style={{ color: statusColor, fontSize: 10, fontWeight: 700 }}>{bossHp}%</span>
+                </div>
+                <div style={{ background: 'var(--border)', borderRadius: 99, height: 10, overflow: 'hidden' }}>
+                  <motion.div
+                    initial={{ width: '100%' }}
+                    animate={{ width: `${bossHp}%` }}
+                    transition={{ duration: 1.2, ease: 'easeOut', delay: 0.3 }}
+                    style={{
+                      height: '100%',
+                      borderRadius: 99,
+                      background: pct >= 80 ? 'var(--success)' : pct >= 50 ? 'var(--gold, #F5B342)' : 'var(--danger)',
+                      boxShadow: `0 0 8px ${pct >= 80 ? 'var(--success)' : pct >= 50 ? 'var(--gold, #F5B342)' : 'var(--danger)'}`,
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
+                <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>{weekDone}/{weekTotal} tasks</span>
+                <span style={{ color: statusColor, fontSize: 11, fontWeight: 700 }}>{pct}% complete</span>
+              </div>
+            </div>
+          )
+        })()}
       </motion.div>
 
       {/* ── Efficiency Panel ── */}

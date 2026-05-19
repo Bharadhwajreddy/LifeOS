@@ -304,13 +304,18 @@ export const useStore = create(
 
       addXP: (amount) => set((s) => {
         const newXP = s.xp + amount
-        // Level thresholds: 100, 250, 500, 1000, 2000, 4000, 8000...
         const THRESHOLDS = [0, 100, 250, 500, 1000, 2000, 4000, 8000, 16000, 32000]
         let newLevel = 1
         for (let i = THRESHOLDS.length - 1; i >= 0; i--) {
           if (newXP >= THRESHOLDS[i]) { newLevel = i + 1; break }
         }
-        return { xp: newXP, level: Math.min(newLevel, 10) }
+        const cappedLevel = Math.min(newLevel, 10)
+        const leveledUp = cappedLevel > (s.level ?? 1)
+        return {
+          xp: newXP,
+          level: cappedLevel,
+          pendingLevelUp: leveledUp ? { newLevel: cappedLevel } : (s.pendingLevelUp ?? null),
+        }
       }),
 
       unlockAchievement: (id, meta = {}) => set((s) => {
@@ -401,6 +406,63 @@ export const useStore = create(
         if (!newTasks.length) return s
         return { dailyTasks: [...s.dailyTasks, ...newTasks] }
       }),
+
+      // ── Level-up celebration ─────────────────────────────────────────────────────
+      pendingLevelUp: null, // { newLevel: number } | null — triggers LevelUpModal
+      dismissLevelUp: () => set({ pendingLevelUp: null }),
+
+      // ── Notifications ────────────────────────────────────────────────────────────
+      notificationsEnabled: false,
+      reminderTime: '09:00',
+      setNotificationsEnabled: (v) => set({ notificationsEnabled: v }),
+      setReminderTime: (t) => set({ reminderTime: t }),
+
+      // ── Daily challenge ──────────────────────────────────────────────────────────
+      dailyChallenge: null,
+      // { date: 'YYYY-MM-DD', text: string, xpReward: number, completed: bool }
+      generateDailyChallenge: () => set((s) => {
+        const todayStr = format(new Date(), 'yyyy-MM-dd')
+        if (s.dailyChallenge?.date === todayStr) return s // already generated today
+        const challenges = [
+          'Complete all high-priority tasks today',
+          'Hit every habit target today',
+          'Complete 5 tasks before noon',
+          'Maintain a 25-minute focus session without distractions',
+          'Log your mood at least once today',
+          'Complete your morning routine habits',
+          'Finish one overdue task today',
+          'Add a new healthy habit and complete it today',
+          'Complete 3 tasks in a single Pomodoro session',
+          'Review and organize your task list',
+        ]
+        const idx = Math.floor(Date.now() / 86400000) % challenges.length
+        return {
+          dailyChallenge: {
+            date: todayStr,
+            text: challenges[idx],
+            xpReward: 50,
+            completed: false,
+          },
+        }
+      }),
+      completeDailyChallenge: () => set((s) => {
+        if (!s.dailyChallenge || s.dailyChallenge.completed) return s
+        const newXP = s.xp + s.dailyChallenge.xpReward
+        const THRESHOLDS = [0, 100, 250, 500, 1000, 2000, 4000, 8000, 16000, 32000]
+        let newLevel = 1
+        for (let i = THRESHOLDS.length - 1; i >= 0; i--) {
+          if (newXP >= THRESHOLDS[i]) { newLevel = i + 1; break }
+        }
+        return {
+          dailyChallenge: { ...s.dailyChallenge, completed: true },
+          xp: newXP,
+          level: Math.min(newLevel, 10),
+        }
+      }),
+
+      // ── Streak shields ────────────────────────────────────────────────────────────
+      streakShields: 0, // earned shields that protect a streak (max 3)
+      useStreakShield: () => set((s) => ({ streakShields: Math.max(0, s.streakShields - 1) })),
     }),
     { name: 'lifeos-v4' }
   )

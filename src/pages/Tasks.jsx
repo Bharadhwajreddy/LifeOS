@@ -12,7 +12,7 @@ import {
   addDays, subDays, startOfMonth, endOfMonth, eachDayOfInterval, getDay,
   isSameDay, isSameMonth, differenceInCalendarDays,
 } from 'date-fns'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence, useMotionValue } from 'framer-motion'
 import { useStore } from '../store'
 import Modal from '../components/Modal'
 import { Card, Btn, Input, Select, Badge, SectionHeader, EmptyState } from '../components/UI'
@@ -266,10 +266,28 @@ function TaskItem({ task, onToggle, onEdit, onDelete, onReschedule, showDate = f
   const [showActions, setShowActions] = useState(false)
   const overdue = isOverdueTask(task)
   const launchPomodoro = usePomodoroLauncher()
+  const x = useMotionValue(0)
 
   return (
+    <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 16, marginBottom: 8 }}>
+      {/* Red delete backdrop */}
+      <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, display: 'flex', alignItems: 'center', paddingRight: 16, background: 'var(--danger)', borderRadius: 12, minWidth: 60 }}>
+        <Trash2 size={18} style={{ color: 'white' }} />
+      </div>
+      {/* Draggable card */}
+      <motion.div
+        drag="x"
+        dragConstraints={{ left: -120, right: 0 }}
+        dragElastic={0.1}
+        style={{ x, position: 'relative', zIndex: 1 }}
+        onDragEnd={(_, info) => {
+          if (info.offset.x < -80) {
+            onDelete(task.id)
+          }
+        }}
+      >
     <div
-      className={`flex items-center gap-3 px-4 py-3.5 mb-2 rounded-2xl ring-1 transition-all ${
+      className={`flex items-center gap-3 px-4 py-3.5 rounded-2xl ring-1 transition-all ${
         overdue
           ? 'border-l-4 border-rose-500 bg-rose-50/50 dark:bg-rose-500/5 ring-rose-200/60 dark:ring-rose-500/20'
           : 'bg-white dark:bg-[#161B27] ring-zinc-200/60 dark:ring-white/[0.06]'
@@ -378,6 +396,8 @@ function TaskItem({ task, onToggle, onEdit, onDelete, onReschedule, showDate = f
           </button>
         </>
       )}
+    </div>
+      </motion.div>
     </div>
   )
 }
