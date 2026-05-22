@@ -274,11 +274,12 @@ function TaskItem({ task, onToggle, onEdit, onDelete, onReschedule, showDate = f
       <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, display: 'flex', alignItems: 'center', paddingRight: 16, background: 'var(--danger)', borderRadius: 12, minWidth: 60 }}>
         <Trash2 size={18} style={{ color: 'white' }} />
       </div>
-      {/* Draggable card */}
+      {/* Draggable card — dragDirectionLock lets vertical scroll pass through */}
       <motion.div
         drag="x"
         dragConstraints={{ left: -120, right: 0 }}
         dragElastic={0.1}
+        dragDirectionLock={true}
         style={{ x, position: 'relative', zIndex: 1 }}
         onDragEnd={(_, info) => {
           if (info.offset.x < -80) {
@@ -287,11 +288,12 @@ function TaskItem({ task, onToggle, onEdit, onDelete, onReschedule, showDate = f
         }}
       >
     <div
-      className={`flex items-center gap-3 px-4 py-3.5 rounded-2xl ring-1 transition-all ${
-        overdue
-          ? 'border-l-4 border-rose-500 bg-rose-50/50 dark:bg-rose-500/5 ring-rose-200/60 dark:ring-rose-500/20'
-          : 'bg-white dark:bg-[#161B27] ring-zinc-200/60 dark:ring-white/[0.06]'
-      }`}
+      className="flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all"
+      style={{
+        background: overdue ? 'rgba(255,100,100,0.07)' : 'var(--surface-3, var(--surface))',
+        border: overdue ? '1px solid var(--danger)' : '1px solid var(--border)',
+        borderLeft: overdue ? '4px solid var(--danger)' : undefined,
+      }}
     >
       {/* Square checkbox */}
       <button
@@ -313,7 +315,11 @@ function TaskItem({ task, onToggle, onEdit, onDelete, onReschedule, showDate = f
         className="flex-1 min-w-0 cursor-pointer"
         onClick={() => setShowActions((v) => !v)}
       >
-        <p className={`text-sm leading-snug ${task.done ? 'line-through text-zinc-400 dark:text-zinc-600' : 'text-zinc-800 dark:text-zinc-100'}`}>
+        <p style={{
+          fontSize: 14, lineHeight: 1.4, margin: 0,
+          color: task.done ? 'var(--text-muted, var(--text-3))' : 'var(--text)',
+          textDecoration: task.done ? 'line-through' : 'none',
+        }}>
           {task.text}
         </p>
         <div className="flex items-center gap-2 mt-0.5 flex-wrap">

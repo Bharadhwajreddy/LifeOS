@@ -14,7 +14,6 @@ import { useNavigate } from 'react-router-dom'
 import XPBar from '../components/XPBar'
 import MoodCheckIn from '../components/MoodCheckIn'
 import WeatherWidget from '../components/WeatherWidget'
-import DailyQuote from '../components/DailyQuote'
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -484,10 +483,9 @@ export default function Home() {
         <XPBar />
       </motion.div>
 
-      {/* ── Weather + Quote ── */}
-      <motion.div {...fadeUp(0.065)} className="space-y-2">
+      {/* ── Weather ── */}
+      <motion.div {...fadeUp(0.065)}>
         <WeatherWidget />
-        <DailyQuote />
       </motion.div>
 
       {/* ── Daily Challenge Card ── */}

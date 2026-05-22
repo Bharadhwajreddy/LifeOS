@@ -50,8 +50,8 @@ export function Input({ label, ...props }) {
       {label && <label className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">{label}</label>}
       <input
         {...props}
-        style={{ background: 'var(--surface-2, var(--surface))', color: 'var(--text)', borderColor: 'var(--border)' }}
-        className="w-full rounded-xl border px-4 py-3 text-sm placeholder:text-[var(--text-3)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+        style={{ background: 'var(--surface-3, var(--surface))', color: 'var(--text)', borderColor: 'var(--border)' }}
+        className="w-full rounded-xl border px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
       />
     </div>
   )
@@ -64,7 +64,8 @@ export function Select({ label, children, ...props }) {
       {label && <label className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">{label}</label>}
       <select
         {...props}
-        className="w-full rounded-xl bg-zinc-100 dark:bg-zinc-800 border-0 px-4 py-3 text-sm text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-400/80 dark:focus:ring-blue-500/90 appearance-none"
+        className="w-full rounded-xl border px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent)] appearance-none"
+        style={{ background: 'var(--surface-3, var(--surface))', color: 'var(--text)', borderColor: 'var(--border)' }}
       >
         {children}
       </select>

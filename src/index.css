@@ -31,22 +31,16 @@
 
 /* ── Mobile Polish ──────────────────────────────────────────── */
 
-/* Prevent horizontal scroll on mobile */
-html, body {
-  overflow-x: hidden;
+/* Prevent horizontal scroll — only on body, NOT html (html overflow:hidden kills iOS vertical scroll) */
+body {
+  overflow-x: clip;
   overscroll-behavior-y: contain;
 }
 
-/* Minimum touch target size for all interactive elements */
-button, [role="button"], a {
+/* Opt-in touch target size for primary action buttons */
+.touch-target {
   min-height: 44px;
   min-width: 44px;
-}
-
-/* Allow small icon buttons to override with auto */
-.touch-target-sm {
-  min-height: auto;
-  min-width: auto;
 }
 
 /* Smooth momentum scrolling on iOS */
