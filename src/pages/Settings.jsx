@@ -5,6 +5,8 @@ import {
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { format } from 'date-fns'
+import { signOut } from 'firebase/auth'
+import { auth } from '../lib/firebase'
 import { useStore } from '../store'
 import { Card, Btn, Input, Select, SectionHeader } from '../components/UI'
 import Modal from '../components/Modal'
@@ -102,7 +104,18 @@ export default function Settings() {
     dailyTasks, habits, habitLogs, transactions, xp, level,
     appointments, tasks, movies, gifts, dates, dateIdeas, achievements, moodLog,
     notificationsEnabled, setNotificationsEnabled, reminderTime, setReminderTime,
+    userEmail, userPhoto, userId, clearUser, setIsOnboarded,
   } = useStore()
+
+  const handleLogout = async () => {
+    if (!auth) return
+    await signOut(auth)
+    clearUser()
+    setIsOnboarded(false)
+    // Clear localStorage to start fresh
+    localStorage.removeItem('lifeos-v4')
+    window.location.reload()
+  }
 
   const [nameVal, setNameVal] = useState(name)
   const [newSource, setNewSource] = useState('')
@@ -235,6 +248,30 @@ export default function Settings() {
 
   return (
     <div className="space-y-6 pb-4">
+
+      {/* Account section */}
+      <div style={{ padding: '16px', borderRadius: 16, background: 'var(--surface)', border: '1px solid var(--border)', marginBottom: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
+          {userPhoto ? (
+            <img src={userPhoto} alt={name} style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover' }} />
+          ) : (
+            <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, color: 'white', fontWeight: 700 }}>
+              {name?.[0]?.toUpperCase() || '?'}
+            </div>
+          )}
+          <div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>{name || 'Your Name'}</div>
+            <div style={{ fontSize: 12, color: 'var(--text-muted, var(--text-3))' }}>{userEmail || ''}</div>
+          </div>
+        </div>
+        <motion.button whileTap={{ scale: 0.96 }}
+          onClick={handleLogout}
+          style={{ width: '100%', padding: '10px 0', borderRadius: 12, background: 'none',
+            border: '1px solid var(--danger)', color: 'var(--danger)', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
+        >
+          Sign out
+        </motion.button>
+      </div>
 
       {/* Profile hero section */}
       <div style={{

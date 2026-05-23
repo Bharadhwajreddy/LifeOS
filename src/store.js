@@ -16,7 +16,7 @@ const SEED_HABITS = [
 export const useStore = create(
   persist(
     (set, get) => ({
-      name: 'Bharadhwaj',
+      name: '',
       darkMode: true,
       theme: 'glass',
       currency: '€',
@@ -136,7 +136,7 @@ export const useStore = create(
       })),
 
       // ── Habits ───────────────────────────────────────────────────────────────
-      habits: SEED_HABITS,
+      habits: [],
       habitLogs: [],
       addHabit: (habit) => set((s) => ({
         habits: [...s.habits, { id: crypto.randomUUID(), target: 1, color: 'blue', ...habit }],
@@ -463,6 +463,20 @@ export const useStore = create(
       // ── Streak shields ────────────────────────────────────────────────────────────
       streakShields: 0, // earned shields that protect a streak (max 3)
       useStreakShield: () => set((s) => ({ streakShields: Math.max(0, s.streakShields - 1) })),
+
+      // ── Auth & User Profile ────────────────────────────────────────────────────
+      userId: null,
+      userEmail: null,
+      userPhoto: null,
+      isOnboarded: false,
+
+      setUser: (user) => set({
+        userId: user?.uid ?? null,
+        userEmail: user?.email ?? null,
+        userPhoto: user?.photoURL ?? null,
+      }),
+      clearUser: () => set({ userId: null, userEmail: null, userPhoto: null }),
+      setIsOnboarded: (v) => set({ isOnboarded: v }),
     }),
     { name: 'lifeos-v4' }
   )
