@@ -8,7 +8,7 @@ import {
   CalendarDays, Repeat,
 } from 'lucide-react'
 import {
-  format, parseISO, startOfDay, isBefore, isToday, isTomorrow,
+  format, parseISO, startOfDay, isBefore, isToday, isTomorrow, isYesterday,
   addDays, subDays, startOfMonth, endOfMonth, eachDayOfInterval, getDay,
   isSameDay, isSameMonth, differenceInCalendarDays,
 } from 'date-fns'
@@ -858,9 +858,11 @@ function TodayTab() {
   const [editApt,      setEditApt]      = useState(null)
   const [reschedModal, setReschedModal] = useState(false)
   const [reschedTask,  setReschedTask]  = useState(null)
+  const [selectedDate, setSelectedDate] = useState(new Date())
 
-  const today  = new Date()
-  const tStr   = todayStr()
+  const today          = new Date()
+  const tStr           = format(selectedDate, 'yyyy-MM-dd')
+  const isViewingToday = isToday(selectedDate)
 
   const overdueTasks = useMemo(
     () => dailyTasks.filter((t) => !t.done && t.date && isBefore(startOfDay(parseISO(t.date)), startOfDay(today))),
@@ -923,28 +925,74 @@ function TodayTab() {
     updateDailyTask(id, { date })
   }
 
-  const isEmpty = !overdueTasks.length && !todayApts.length && !todayTasks.length
+  const isEmpty = !(isViewingToday && overdueTasks.length) && !todayApts.length && !todayTasks.length
 
   return (
     <div className="space-y-4">
-      {/* Date header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-2xl font-bold text-zinc-900 dark:text-white leading-tight">
-            {format(today, 'EEEE')}
+      {/* Date header with day navigation */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <motion.button
+          whileTap={{ scale: 0.88 }}
+          onClick={() => setSelectedDate(d => subDays(d, 1))}
+          aria-label="Previous day"
+          style={{
+            width: 36, height: 36, borderRadius: '50%',
+            background: 'var(--surface)', border: '1px solid var(--border)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: 'pointer', color: 'var(--text-2)', flexShrink: 0,
+          }}
+        >
+          <ChevronDown size={16} style={{ transform: 'rotate(90deg)' }} />
+        </motion.button>
+
+        <div style={{ flex: 1, textAlign: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+            <p style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text)', lineHeight: 1.1 }}>
+              {isViewingToday ? 'Today' : isTomorrow(selectedDate) ? 'Tomorrow' : isYesterday(selectedDate) ? 'Yesterday' : format(selectedDate, 'EEEE')}
+            </p>
+            {!isViewingToday && (
+              <button
+                onClick={() => setSelectedDate(new Date())}
+                style={{
+                  fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 99,
+                  background: 'var(--accent-soft, rgba(59,158,255,0.15))',
+                  color: 'var(--accent)', border: 'none', cursor: 'pointer',
+                }}
+              >
+                Today
+              </button>
+            )}
+          </div>
+          <p style={{ fontSize: '0.8125rem', color: 'var(--text-3)', marginTop: 2 }}>
+            {format(selectedDate, 'MMMM d, yyyy')}
           </p>
-          <p className="text-sm text-zinc-400 mt-0.5">{format(today, 'MMMM d, yyyy')}</p>
         </div>
+
+        <motion.button
+          whileTap={{ scale: 0.88 }}
+          onClick={() => setSelectedDate(d => addDays(d, 1))}
+          aria-label="Next day"
+          style={{
+            width: 36, height: 36, borderRadius: '50%',
+            background: 'var(--surface)', border: '1px solid var(--border)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: 'pointer', color: 'var(--text-2)', flexShrink: 0,
+          }}
+        >
+          <ChevronDown size={16} style={{ transform: 'rotate(-90deg)' }} />
+        </motion.button>
+
         <button
           onClick={requestPermission}
           aria-label={permission === 'granted' ? 'Notifications enabled' : 'Enable notifications'}
-          className={`p-2.5 rounded-2xl transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/70 ${
-            permission === 'granted'
-              ? 'bg-teal-100 dark:bg-teal-500/20 text-teal-600 dark:text-teal-400'
-              : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400'
-          }`}
+          style={{
+            width: 36, height: 36, borderRadius: 10, border: 'none', cursor: 'pointer',
+            background: permission === 'granted' ? 'rgba(20,184,166,0.15)' : 'var(--surface)',
+            color: permission === 'granted' ? '#14B8A6' : 'var(--text-3)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+          }}
         >
-          {permission === 'granted' ? <Bell size={20} /> : <BellOff size={20} />}
+          {permission === 'granted' ? <Bell size={18} /> : <BellOff size={18} />}
         </button>
       </div>
 
@@ -962,8 +1010,8 @@ function TodayTab() {
         </div>
       )}
 
-      {/* Overdue section */}
-      {overdueTasks.length > 0 && (
+      {/* Overdue section — only visible when viewing today */}
+      {isViewingToday && overdueTasks.length > 0 && (
         <div>
           <button
             onClick={() => setOverdueOpen((v) => !v)}
@@ -1052,7 +1100,7 @@ function TodayTab() {
           onClick={() => { setEditTask(null); setTaskModal(true) }}
           className="flex-1 py-3 rounded-2xl border-2 border-dashed border-zinc-200 dark:border-zinc-700 text-sm font-semibold text-zinc-400 dark:text-zinc-500 hover:border-blue-300 dark:hover:border-blue-600 hover:text-blue-500 dark:hover:text-blue-400 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/70"
         >
-          + Task for today
+          + {isViewingToday ? 'Task for today' : `Task for ${format(selectedDate, 'MMM d')}`}
         </button>
         <button
           onClick={() => { setEditApt(null); setAptModal(true) }}
@@ -1067,6 +1115,7 @@ function TodayTab() {
         open={taskModal}
         onClose={() => { setTaskModal(false); setEditTask(null) }}
         initial={editTask}
+        defaultDate={editTask ? undefined : tStr}
         onSave={handleSaveTask}
       />
 
@@ -1075,6 +1124,7 @@ function TodayTab() {
         open={aptModal}
         onClose={() => { setAptModal(false); setEditApt(null) }}
         initial={editApt}
+        defaultDate={editApt ? undefined : tStr}
         onSave={handleSaveApt}
       />
 
@@ -1391,35 +1441,43 @@ function CalendarTab() {
                   </span>
                 </div>
 
-                {/* Task count badge */}
+                {/* Task count badge: done/total format */}
                 {dots && dots.tasks > 0 && (
                   <div style={{
                     marginTop: 2,
-                    fontSize: 9,
+                    fontSize: 8,
                     fontWeight: 700,
                     lineHeight: 1,
-                    paddingInline: 4,
+                    paddingInline: 3,
                     paddingBlock: 1.5,
                     borderRadius: 99,
                     background: isSel ? 'rgba(255,255,255,0.25)' : taskDotColor,
-                    color: isSel ? 'white' : 'white',
-                    minWidth: 14,
+                    color: 'white',
+                    minWidth: 16,
+                    textAlign: 'center',
+                    letterSpacing: '-0.2px',
+                  }}>
+                    {status?.done ?? 0}/{status?.total ?? dots.tasks}
+                  </div>
+                )}
+
+                {/* Appointment count pill */}
+                {dots && dots.apts > 0 && (
+                  <div style={{
+                    marginTop: dots.tasks > 0 ? 1 : 2,
+                    fontSize: 8,
+                    fontWeight: 700,
+                    lineHeight: 1,
+                    paddingInline: 3,
+                    paddingBlock: 1.5,
+                    borderRadius: 99,
+                    background: isSel ? 'rgba(255,255,255,0.2)' : 'rgba(20,184,166,0.25)',
+                    color: isSel ? 'white' : '#0D9488',
+                    minWidth: 16,
                     textAlign: 'center',
                   }}>
-                    {dots.tasks}
+                    {dots.apts} apt
                   </div>
-                )}
-
-                {/* Dots row for apts when no tasks */}
-                {dots && dots.tasks === 0 && dots.apts > 0 && (
-                  <div style={{ display: 'flex', gap: 2, marginTop: 3 }}>
-                    <div style={{ width: 4, height: 4, borderRadius: '50%', background: isSel ? 'rgba(255,255,255,0.7)' : '#14B8A6' }} />
-                  </div>
-                )}
-
-                {/* Teal dot for apts alongside task badge */}
-                {dots && dots.tasks > 0 && dots.apts > 0 && (
-                  <div style={{ width: 4, height: 4, borderRadius: '50%', background: isSel ? 'rgba(255,255,255,0.7)' : '#14B8A6', marginTop: 1 }} />
                 )}
               </button>
             )
