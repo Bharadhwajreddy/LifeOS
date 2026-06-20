@@ -268,7 +268,13 @@ function TaskItem({ task, onToggle, onEdit, onDelete, onReschedule, showDate = f
   const [showActions, setShowActions] = useState(false)
   const overdue = isOverdueTask(task)
   const launchPomodoro = usePomodoroLauncher()
+  const updateDailyTask = useStore((s) => s.updateDailyTask)
   const x = useMotionValue(0)
+
+  const toggleChecklistItem = (itemId) => {
+    const newChecklist = (task.checklist || []).map((c) => c.id === itemId ? { ...c, done: !c.done } : c)
+    updateDailyTask(task.id, { checklist: newChecklist })
+  }
 
   return (
     <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 16, marginBottom: 8 }}>
@@ -419,7 +425,12 @@ function TaskItem({ task, onToggle, onEdit, onDelete, onReschedule, showDate = f
           {task.checklist && task.checklist.length > 0 && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
               {task.checklist.map((item) => (
-                <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); toggleChecklistItem(item.id) }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left', width: '100%' }}
+                >
                   <div style={{
                     width: 16, height: 16, borderRadius: 4, flexShrink: 0, border: '1.5px solid var(--border)',
                     background: item.done ? 'var(--accent)' : 'transparent',
@@ -430,7 +441,7 @@ function TaskItem({ task, onToggle, onEdit, onDelete, onReschedule, showDate = f
                   <span style={{ fontSize: 13, color: item.done ? 'var(--text-3)' : 'var(--text)', textDecoration: item.done ? 'line-through' : 'none' }}>
                     {item.text}
                   </span>
-                </div>
+                </button>
               ))}
             </div>
           )}
@@ -2153,13 +2164,76 @@ function MatrixView({ tasks, onMoveTask }) {
 }
 
 // ─── OFFICE / KANBAN TAB ──────────────────────────────────────────────────────
+// ─── Shared: Checklist editor + display ───────────────────────────────────────
+function ChecklistEditor({ items, onChange }) {
+  const list = items || []
+  const update = (idx, patch) => onChange(list.map((c, i) => i === idx ? { ...c, ...patch } : c))
+  const remove = (idx) => onChange(list.filter((_, i) => i !== idx))
+  const add = () => onChange([...list, { id: crypto.randomUUID(), text: '', done: false }])
+  return (
+    <div className="flex flex-col gap-2">
+      <p className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">Checklist (optional)</p>
+      {list.map((item, idx) => (
+        <div key={item.id} className="flex items-center gap-2">
+          <button type="button" onClick={() => update(idx, { done: !item.done })}
+            style={{ width: 18, height: 18, borderRadius: 5, flexShrink: 0, border: '1.5px solid var(--border)',
+              background: item.done ? 'var(--accent)' : 'var(--surface)', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {item.done && <Check size={11} style={{ color: '#fff' }} strokeWidth={3} />}
+          </button>
+          <input value={item.text} onChange={(e) => update(idx, { text: e.target.value })} placeholder="List item..."
+            style={{ flex: 1, fontSize: 13, background: 'var(--surface-3, var(--surface))',
+              border: '1px solid var(--border)', borderRadius: 10, padding: '7px 12px', outline: 'none',
+              textDecoration: item.done ? 'line-through' : 'none',
+              color: item.done ? 'var(--text-3)' : 'var(--text)' }} />
+          <button type="button" onClick={() => remove(idx)}
+            style={{ padding: 4, color: 'var(--text-3)', background: 'none', border: 'none', cursor: 'pointer' }}>
+            <X size={13} />
+          </button>
+        </div>
+      ))}
+      <button type="button" onClick={add}
+        style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600,
+          color: 'var(--accent)', background: 'none', border: '1.5px dashed var(--border)',
+          borderRadius: 10, padding: '8px 12px', cursor: 'pointer', width: '100%' }}>
+        <Plus size={13} /> Add item
+      </button>
+    </div>
+  )
+}
+
+function ChecklistDisplay({ items, onToggle }) {
+  if (!items || items.length === 0) return null
+  const done = items.filter((i) => i.done).length
+  return (
+    <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '12px 14px' }}>
+      <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
+        Checklist · {done}/{items.length}
+      </p>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        {items.map((item) => (
+          <button key={item.id} type="button" onClick={() => onToggle(item.id)}
+            style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: 'none', cursor: 'pointer', padding: 0, textAlign: 'left', width: '100%' }}>
+            <div style={{ width: 16, height: 16, borderRadius: 4, flexShrink: 0, border: '1.5px solid var(--border)',
+              background: item.done ? 'var(--accent)' : 'transparent',
+              display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              {item.done && <Check size={10} style={{ color: '#fff' }} strokeWidth={3} />}
+            </div>
+            <span style={{ fontSize: 13, color: item.done ? 'var(--text-3)' : 'var(--text)', textDecoration: item.done ? 'line-through' : 'none' }}>{item.text}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function KanbanTab({ category }) {
   const { tasks, addTask, deleteTask, moveTask, updateTask } = useStore()
   const [addModal,    setAddModal]    = useState(false)
   const [detail,      setDetail]      = useState(null)
   const [editMode,    setEditMode]    = useState(false)
-  const [form,        setForm]        = useState({ text: '', priority: 'med', dueDate: '', notes: '' })
-  const [editForm,    setEditForm]    = useState({ text: '', priority: 'med', dueDate: '', notes: '' })
+  const [form,        setForm]        = useState({ text: '', priority: 'med', dueDate: '', notes: '', checklist: [] })
+  const [editForm,    setEditForm]    = useState({ text: '', priority: 'med', dueDate: '', notes: '', checklist: [] })
   const [matrixMode,  setMatrixMode]  = useState(false)
 
   const items = tasks.filter((t) => t.category === category)
@@ -2167,15 +2241,21 @@ function KanbanTab({ category }) {
 
   const openDetail = (t) => {
     setDetail(t)
-    setEditForm({ text: t.text, priority: t.priority, dueDate: t.dueDate || '', notes: t.notes || '' })
+    setEditForm({ text: t.text, priority: t.priority, dueDate: t.dueDate || '', notes: t.notes || '', checklist: t.checklist || [] })
     setEditMode(false)
   }
 
   const saveEdit = () => {
     if (!editForm.text.trim()) return
-    updateTask(detail.id, { text: editForm.text.trim(), priority: editForm.priority, dueDate: editForm.dueDate, notes: editForm.notes })
+    updateTask(detail.id, { text: editForm.text.trim(), priority: editForm.priority, dueDate: editForm.dueDate, notes: editForm.notes, checklist: editForm.checklist })
     setDetail((d) => ({ ...d, ...editForm, text: editForm.text.trim() }))
     setEditMode(false)
+  }
+
+  const toggleChecklistItem = (itemId) => {
+    const newChecklist = (detail.checklist || []).map((c) => c.id === itemId ? { ...c, done: !c.done } : c)
+    updateTask(detail.id, { checklist: newChecklist })
+    setDetail((d) => ({ ...d, checklist: newChecklist }))
   }
 
   return (
@@ -2245,6 +2325,7 @@ function KanbanTab({ category }) {
                       <div className="flex flex-wrap gap-1.5 mt-2">
                         <Badge color={PRIORITY_COLOR[t.priority]}>{PRIORITY_LABEL[t.priority]}</Badge>
                         {t.dueDate && <Badge color={isOverdue(t) ? 'red' : 'zinc'}>{isOverdue(t) ? '⚠ ' : ''}{format(parseISO(t.dueDate), 'MMM d')}</Badge>}
+                        {t.checklist && t.checklist.length > 0 && <Badge color="zinc">✓ {t.checklist.filter((c) => c.done).length}/{t.checklist.length}</Badge>}
                       </div>
                     </div>
                     <ChevronRight size={15} style={{ color: 'var(--text-3)', marginTop: 2, flexShrink: 0 }} onClick={() => openDetail(t)} />
@@ -2266,13 +2347,14 @@ function KanbanTab({ category }) {
           </Select>
           <Input label="Due date (optional)" type="date" value={form.dueDate} onChange={(e) => setForm({ ...form, dueDate: e.target.value })} />
           <Input label="Notes (optional)" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Additional details..." />
+          <ChecklistEditor items={form.checklist} onChange={(checklist) => setForm({ ...form, checklist })} />
           <Btn
             size="lg"
             disabled={!form.text.trim()}
             onClick={() => {
               if (form.text.trim()) {
-                addTask({ ...form, text: form.text.trim(), category, notes: form.notes })
-                setForm({ text: '', priority: 'med', dueDate: '', notes: '' })
+                addTask({ ...form, text: form.text.trim(), category })
+                setForm({ text: '', priority: 'med', dueDate: '', notes: '', checklist: [] })
                 setAddModal(false)
               }
             }}
@@ -2295,6 +2377,7 @@ function KanbanTab({ category }) {
                 <p style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{detail.notes}</p>
               </div>
             )}
+            <ChecklistDisplay items={detail.checklist} onToggle={toggleChecklistItem} />
             <div>
               <p className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">Move to</p>
               <div className="grid grid-cols-3 gap-2">
@@ -2334,6 +2417,7 @@ function KanbanTab({ category }) {
                 style={{ background: 'var(--surface-3, var(--surface))', color: 'var(--text)', border: '1px solid var(--border)', borderRadius: 12, padding: '10px 14px', fontSize: 13, outline: 'none', resize: 'none', width: '100%' }}
               />
             </div>
+            <ChecklistEditor items={editForm.checklist} onChange={(checklist) => setEditForm({ ...editForm, checklist })} />
             <Btn size="lg" onClick={saveEdit} disabled={!editForm.text.trim()}>Save Changes</Btn>
             <Btn variant="ghost" size="lg" onClick={() => setEditMode(false)}>Cancel</Btn>
           </div>
@@ -2617,23 +2701,29 @@ function ProjectTasksTab({ projectId, color }) {
   const [addModal,  setAddModal]  = useState(false)
   const [detail,    setDetail]    = useState(null)
   const [editMode,  setEditMode]  = useState(false)
-  const [form,      setForm]      = useState({ text: '', priority: 'med', dueDate: '', notes: '' })
-  const [editForm,  setEditForm]  = useState({ text: '', priority: 'med', dueDate: '', notes: '' })
+  const [form,      setForm]      = useState({ text: '', priority: 'med', dueDate: '', notes: '', checklist: [] })
+  const [editForm,  setEditForm]  = useState({ text: '', priority: 'med', dueDate: '', notes: '', checklist: [] })
 
   const items = projectTasks.filter((t) => t.projectId === projectId)
   const isOverdue = (t) => t.dueDate && t.status !== 'done' && isBefore(startOfDay(parseISO(t.dueDate)), startOfDay(new Date()))
 
   const openDetail = (t) => {
     setDetail(t)
-    setEditForm({ text: t.text, priority: t.priority, dueDate: t.dueDate || '', notes: t.notes || '' })
+    setEditForm({ text: t.text, priority: t.priority, dueDate: t.dueDate || '', notes: t.notes || '', checklist: t.checklist || [] })
     setEditMode(false)
   }
 
   const saveEdit = () => {
     if (!editForm.text.trim()) return
-    updateProjectTask(detail.id, { text: editForm.text.trim(), priority: editForm.priority, dueDate: editForm.dueDate, notes: editForm.notes })
+    updateProjectTask(detail.id, { text: editForm.text.trim(), priority: editForm.priority, dueDate: editForm.dueDate, notes: editForm.notes, checklist: editForm.checklist })
     setDetail((d) => ({ ...d, ...editForm, text: editForm.text.trim() }))
     setEditMode(false)
+  }
+
+  const toggleChecklistItem = (itemId) => {
+    const newChecklist = (detail.checklist || []).map((c) => c.id === itemId ? { ...c, done: !c.done } : c)
+    updateProjectTask(detail.id, { checklist: newChecklist })
+    setDetail((d) => ({ ...d, checklist: newChecklist }))
   }
 
   return (
@@ -2669,6 +2759,7 @@ function ProjectTasksTab({ projectId, color }) {
                       <div className="flex flex-wrap gap-1.5 mt-2">
                         <Badge color={PRIORITY_COLOR[t.priority]}>{PRIORITY_LABEL[t.priority]}</Badge>
                         {t.dueDate && <Badge color={isOverdue(t) ? 'red' : 'zinc'}>{isOverdue(t) ? '⚠ ' : ''}{format(parseISO(t.dueDate), 'MMM d')}</Badge>}
+                        {t.checklist && t.checklist.length > 0 && <Badge color="zinc">✓ {t.checklist.filter((c) => c.done).length}/{t.checklist.length}</Badge>}
                       </div>
                     </div>
                     <ChevronRight size={15} style={{ color: 'var(--text-3)', marginTop: 2, flexShrink: 0 }} onClick={() => openDetail(t)} />
@@ -2690,13 +2781,14 @@ function ProjectTasksTab({ projectId, color }) {
           </Select>
           <Input label="Due date (optional)" type="date" value={form.dueDate} onChange={(e) => setForm({ ...form, dueDate: e.target.value })} />
           <Input label="Notes (optional)" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Additional details..." />
+          <ChecklistEditor items={form.checklist} onChange={(checklist) => setForm({ ...form, checklist })} />
           <Btn
             size="lg"
             disabled={!form.text.trim()}
             onClick={() => {
               if (form.text.trim()) {
-                addProjectTask({ projectId, ...form, text: form.text.trim(), notes: form.notes })
-                setForm({ text: '', priority: 'med', dueDate: '', notes: '' })
+                addProjectTask({ projectId, ...form, text: form.text.trim() })
+                setForm({ text: '', priority: 'med', dueDate: '', notes: '', checklist: [] })
                 setAddModal(false)
               }
             }}
@@ -2719,6 +2811,7 @@ function ProjectTasksTab({ projectId, color }) {
                 <p style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{detail.notes}</p>
               </div>
             )}
+            <ChecklistDisplay items={detail.checklist} onToggle={toggleChecklistItem} />
             <div>
               <p className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">Move to</p>
               <div className="grid grid-cols-3 gap-2">
@@ -2758,6 +2851,7 @@ function ProjectTasksTab({ projectId, color }) {
                 style={{ background: 'var(--surface-3, var(--surface))', color: 'var(--text)', border: '1px solid var(--border)', borderRadius: 12, padding: '10px 14px', fontSize: 13, outline: 'none', resize: 'none', width: '100%' }}
               />
             </div>
+            <ChecklistEditor items={editForm.checklist} onChange={(checklist) => setEditForm({ ...editForm, checklist })} />
             <Btn size="lg" onClick={saveEdit} disabled={!editForm.text.trim()}>Save Changes</Btn>
             <Btn variant="ghost" size="lg" onClick={() => setEditMode(false)}>Cancel</Btn>
           </div>
