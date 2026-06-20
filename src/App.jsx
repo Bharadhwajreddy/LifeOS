@@ -97,7 +97,7 @@ function AppInner() {
   return (
     // lf-app picks up the data-theme attribute for CSS variable resolution
     <div className="lf-app min-h-screen overflow-x-hidden transition-colors" data-theme={theme}>
-      <main className="max-w-md mx-auto px-4 pt-6 pb-32">
+      <main className="lf-main max-w-lg mx-auto px-4 pt-6 pb-32">
         <AnimatePresence mode="wait">
           <Routes location={location} key={location.pathname}>
             <Route path="/" element={<PageWrapper><Home /></PageWrapper>} />

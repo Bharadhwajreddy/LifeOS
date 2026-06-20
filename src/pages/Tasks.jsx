@@ -153,13 +153,15 @@ function useReminders(appointments) {
 }
 
 // ─── Scrollable pill tab bar ──────────────────────────────────────────────────
-const TOP_TABS = [
-  { key: 'today',     label: 'Today' },
-  { key: 'upcoming',  label: 'Upcoming' },
-  { key: 'calendar',  label: 'Calendar' },
-  { key: 'habits',    label: 'Habits' },
-  { key: 'office',    label: 'Office' },
-  { key: 'projects',  label: 'Projects' },
+const PLAN_TABS = [
+  { key: 'today',    label: '📅 Today' },
+  { key: 'upcoming', label: '⏭ Next' },
+  { key: 'calendar', label: '🗓 Calendar' },
+  { key: 'habits',   label: '🔥 Habits' },
+]
+const WORK_TABS = [
+  { key: 'office',   label: '💼 Office' },
+  { key: 'projects', label: '🚀 Projects' },
 ]
 
 function PillTabBar({ tabs, active, onChange }) {
@@ -288,13 +290,16 @@ function TaskItem({ task, onToggle, onEdit, onDelete, onReschedule, showDate = f
         }}
       >
     <div
-      className="flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all"
+      className="rounded-2xl transition-all"
       style={{
         background: overdue ? 'rgba(255,100,100,0.07)' : 'var(--surface-3, var(--surface))',
         border: overdue ? '1px solid var(--danger)' : '1px solid var(--border)',
         borderLeft: overdue ? '4px solid var(--danger)' : undefined,
+        padding: '14px 16px',
       }}
     >
+      {/* Main row */}
+      <div className="flex items-center gap-3">
       {/* Square checkbox */}
       <button
         onClick={() => onToggle(task.id)}
@@ -331,7 +336,7 @@ function TaskItem({ task, onToggle, onEdit, onDelete, onReschedule, showDate = f
           {showDate && task.date && (
             <span className="text-[11px] text-zinc-400">{format(parseISO(task.date), 'MMM d')}</span>
           )}
-          {task.notes && <span className="text-[11px] text-zinc-400 truncate max-w-[100px]">{task.notes}</span>}
+          {task.notes && !showActions && <span style={{ fontSize: 11, color: 'var(--text-3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 120 }}>{task.notes}</span>}
         </div>
       </div>
 
@@ -401,6 +406,35 @@ function TaskItem({ task, onToggle, onEdit, onDelete, onReschedule, showDate = f
             <Trash2 size={13} />
           </button>
         </>
+      )}
+      </div>
+      {/* Expanded notes + checklist */}
+      {showActions && (task.notes || (task.checklist && task.checklist.length > 0)) && (
+        <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--border)' }}>
+          {task.notes && (
+            <p style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.6, whiteSpace: 'pre-wrap', marginBottom: task.checklist?.length ? 8 : 0 }}>
+              {task.notes}
+            </p>
+          )}
+          {task.checklist && task.checklist.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+              {task.checklist.map((item) => (
+                <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{
+                    width: 16, height: 16, borderRadius: 4, flexShrink: 0, border: '1.5px solid var(--border)',
+                    background: item.done ? 'var(--accent)' : 'transparent',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    {item.done && <Check size={10} style={{ color: '#fff' }} strokeWidth={3} />}
+                  </div>
+                  <span style={{ fontSize: 13, color: item.done ? 'var(--text-3)' : 'var(--text)', textDecoration: item.done ? 'line-through' : 'none' }}>
+                    {item.text}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       )}
     </div>
       </motion.div>
@@ -508,7 +542,7 @@ function DailyAgenda({ date, onEditApt, onDeleteApt, onEditTask, onToggleTask, o
 // ─── Task Modal (Add / Edit) ──────────────────────────────────────────────────
 function TaskModal({ open, onClose, initial = null, onSave, defaultDate = null }) {
   const today = todayStr()
-  const blank = { text: '', notes: '', date: defaultDate || today, dueTime: '', priority: 'med', done: false }
+  const blank = { text: '', notes: '', date: defaultDate || today, dueTime: '', priority: 'med', done: false, checklist: [] }
   const [form, setForm] = useState(blank)
 
   useEffect(() => {
@@ -536,6 +570,61 @@ function TaskModal({ open, onClose, initial = null, onSave, defaultDate = null }
             rows={2}
             className="w-full rounded-xl bg-zinc-100 dark:bg-zinc-800 border-0 px-4 py-3 text-sm text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-blue-400/80 dark:focus:ring-blue-500/90 resize-none"
           />
+        </div>
+        {/* Checklist */}
+        <div className="flex flex-col gap-2">
+          <p className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">Checklist (optional)</p>
+          {(form.checklist || []).map((item, idx) => (
+            <div key={item.id} className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  const updated = form.checklist.map((c, i) => i === idx ? { ...c, done: !c.done } : c)
+                  setForm((prev) => ({ ...prev, checklist: updated }))
+                }}
+                style={{
+                  width: 18, height: 18, borderRadius: 5, flexShrink: 0, border: '1.5px solid var(--border)',
+                  background: item.done ? 'var(--accent)' : 'var(--surface)', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}
+              >
+                {item.done && <Check size={11} style={{ color: '#fff' }} strokeWidth={3} />}
+              </button>
+              <input
+                value={item.text}
+                onChange={(e) => {
+                  const updated = form.checklist.map((c, i) => i === idx ? { ...c, text: e.target.value } : c)
+                  setForm((prev) => ({ ...prev, checklist: updated }))
+                }}
+                placeholder="List item..."
+                style={{
+                  flex: 1, fontSize: 13, background: 'var(--surface-3, var(--surface))',
+                  border: '1px solid var(--border)', borderRadius: 10, padding: '7px 12px',
+                  outline: 'none',
+                  textDecoration: item.done ? 'line-through' : 'none',
+                  color: item.done ? 'var(--text-3)' : 'var(--text)',
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => setForm((prev) => ({ ...prev, checklist: prev.checklist.filter((_, i) => i !== idx) }))}
+                style={{ padding: 4, color: 'var(--text-3)', background: 'none', border: 'none', cursor: 'pointer' }}
+              >
+                <X size={13} />
+              </button>
+            </div>
+          ))}
+          <button
+            type="button"
+            onClick={() => setForm((prev) => ({ ...prev, checklist: [...(prev.checklist || []), { id: crypto.randomUUID(), text: '', done: false }] }))}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600,
+              color: 'var(--accent)', background: 'none', border: '1.5px dashed var(--border)',
+              borderRadius: 10, padding: '8px 12px', cursor: 'pointer', width: '100%',
+            }}
+          >
+            <Plus size={13} /> Add item
+          </button>
         </div>
         <div className="grid grid-cols-2 gap-3">
           <Input label="Date" type="date" value={form.date} onChange={f('date')} />
@@ -2069,8 +2158,8 @@ function KanbanTab({ category }) {
   const [addModal,    setAddModal]    = useState(false)
   const [detail,      setDetail]      = useState(null)
   const [editMode,    setEditMode]    = useState(false)
-  const [form,        setForm]        = useState({ text: '', priority: 'med', dueDate: '' })
-  const [editForm,    setEditForm]    = useState({ text: '', priority: 'med', dueDate: '' })
+  const [form,        setForm]        = useState({ text: '', priority: 'med', dueDate: '', notes: '' })
+  const [editForm,    setEditForm]    = useState({ text: '', priority: 'med', dueDate: '', notes: '' })
   const [matrixMode,  setMatrixMode]  = useState(false)
 
   const items = tasks.filter((t) => t.category === category)
@@ -2078,13 +2167,13 @@ function KanbanTab({ category }) {
 
   const openDetail = (t) => {
     setDetail(t)
-    setEditForm({ text: t.text, priority: t.priority, dueDate: t.dueDate || '' })
+    setEditForm({ text: t.text, priority: t.priority, dueDate: t.dueDate || '', notes: t.notes || '' })
     setEditMode(false)
   }
 
   const saveEdit = () => {
     if (!editForm.text.trim()) return
-    updateTask(detail.id, { text: editForm.text.trim(), priority: editForm.priority, dueDate: editForm.dueDate })
+    updateTask(detail.id, { text: editForm.text.trim(), priority: editForm.priority, dueDate: editForm.dueDate, notes: editForm.notes })
     setDetail((d) => ({ ...d, ...editForm, text: editForm.text.trim() }))
     setEditMode(false)
   }
@@ -2136,16 +2225,29 @@ function KanbanTab({ category }) {
             {col.length === 0
               ? <div className="bg-zinc-50 dark:bg-zinc-800/30 rounded-2xl py-4 text-center text-xs text-zinc-400 dark:text-zinc-600">Empty</div>
               : col.map((t) => (
-                <Card key={t.id} className="p-4 mb-2 cursor-pointer active:scale-[0.98] transition-transform" onClick={() => openDetail(t)}>
-                  <div className="flex items-start gap-2">
-                    <div className="flex-1">
-                      <p className={`text-sm font-medium leading-snug ${t.status === 'done' ? 'line-through text-zinc-400' : 'text-zinc-800 dark:text-zinc-100'}`}>{t.text}</p>
+                <Card key={t.id} className="p-4 mb-2 active:scale-[0.98] transition-transform">
+                  <div className="flex items-start gap-3">
+                    {/* Quick complete button */}
+                    <button
+                      onClick={(e) => { e.stopPropagation(); moveTask(t.id, t.status === 'done' ? 'todo' : 'done') }}
+                      style={{
+                        width: 20, height: 20, borderRadius: 6, flexShrink: 0, border: '2px solid',
+                        borderColor: t.status === 'done' ? 'var(--success)' : 'var(--border)',
+                        background: t.status === 'done' ? 'var(--success)' : 'transparent',
+                        cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 1,
+                      }}
+                    >
+                      {t.status === 'done' && <Check size={11} style={{ color: '#fff' }} strokeWidth={3} />}
+                    </button>
+                    <div className="flex-1 cursor-pointer" onClick={() => openDetail(t)}>
+                      <p style={{ fontSize: 13, fontWeight: 500, color: t.status === 'done' ? 'var(--text-3)' : 'var(--text)', textDecoration: t.status === 'done' ? 'line-through' : 'none', lineHeight: 1.4 }}>{t.text}</p>
+                      {t.notes && <p style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.notes}</p>}
                       <div className="flex flex-wrap gap-1.5 mt-2">
                         <Badge color={PRIORITY_COLOR[t.priority]}>{PRIORITY_LABEL[t.priority]}</Badge>
                         {t.dueDate && <Badge color={isOverdue(t) ? 'red' : 'zinc'}>{isOverdue(t) ? '⚠ ' : ''}{format(parseISO(t.dueDate), 'MMM d')}</Badge>}
                       </div>
                     </div>
-                    <ChevronRight size={15} className="text-zinc-300 dark:text-zinc-600 mt-0.5 shrink-0" />
+                    <ChevronRight size={15} style={{ color: 'var(--text-3)', marginTop: 2, flexShrink: 0 }} onClick={() => openDetail(t)} />
                   </div>
                 </Card>
               ))
@@ -2163,13 +2265,14 @@ function KanbanTab({ category }) {
             <option value="low">Low priority</option>
           </Select>
           <Input label="Due date (optional)" type="date" value={form.dueDate} onChange={(e) => setForm({ ...form, dueDate: e.target.value })} />
+          <Input label="Notes (optional)" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Additional details..." />
           <Btn
             size="lg"
             disabled={!form.text.trim()}
             onClick={() => {
               if (form.text.trim()) {
-                addTask({ ...form, text: form.text.trim(), category })
-                setForm({ text: '', priority: 'med', dueDate: '' })
+                addTask({ ...form, text: form.text.trim(), category, notes: form.notes })
+                setForm({ text: '', priority: 'med', dueDate: '', notes: '' })
                 setAddModal(false)
               }
             }}
@@ -2186,6 +2289,12 @@ function KanbanTab({ category }) {
               <Badge color={PRIORITY_COLOR[detail.priority]}>{PRIORITY_LABEL[detail.priority]} priority</Badge>
               {detail.dueDate && <Badge color="zinc">Due {format(parseISO(detail.dueDate), 'MMM d, yyyy')}</Badge>}
             </div>
+            {detail.notes && (
+              <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '12px 14px' }}>
+                <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Notes</p>
+                <p style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{detail.notes}</p>
+              </div>
+            )}
             <div>
               <p className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">Move to</p>
               <div className="grid grid-cols-3 gap-2">
@@ -2215,6 +2324,16 @@ function KanbanTab({ category }) {
               <option value="low">Low</option>
             </Select>
             <Input label="Due date" type="date" value={editForm.dueDate} onChange={(e) => setEditForm({ ...editForm, dueDate: e.target.value })} />
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">Notes</label>
+              <textarea
+                value={editForm.notes}
+                onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
+                placeholder="Additional details..."
+                rows={2}
+                style={{ background: 'var(--surface-3, var(--surface))', color: 'var(--text)', border: '1px solid var(--border)', borderRadius: 12, padding: '10px 14px', fontSize: 13, outline: 'none', resize: 'none', width: '100%' }}
+              />
+            </div>
             <Btn size="lg" onClick={saveEdit} disabled={!editForm.text.trim()}>Save Changes</Btn>
             <Btn variant="ghost" size="lg" onClick={() => setEditMode(false)}>Cancel</Btn>
           </div>
@@ -2411,6 +2530,28 @@ function ProjectForm({ form, setForm, onSave, saveLabel = 'Create Project', show
 }
 
 // ─── Project Detail ────────────────────────────────────────────────────────────
+function MarkCompleteBtn({ projectId }) {
+  const { updateProject } = useStore()
+  const [done, setDone] = useState(false)
+  const handleClick = () => {
+    setDone(true)
+    updateProject(projectId, { status: 'completed' })
+  }
+  return (
+    <button
+      onClick={handleClick}
+      disabled={done}
+      style={{
+        fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 8, border: 'none',
+        background: done ? 'rgba(52,211,153,0.2)' : 'var(--surface)', color: done ? 'var(--success)' : 'var(--text-3)',
+        cursor: done ? 'default' : 'pointer', display: 'flex', alignItems: 'center', gap: 4,
+      }}
+    >
+      <Check size={11} /> {done ? 'Done!' : 'Complete'}
+    </button>
+  )
+}
+
 const DETAIL_TABS = [
   { key: 'tasks', label: '✓ Tasks' },
   { key: 'notes', label: '📝 Notes' },
@@ -2437,9 +2578,14 @@ function ProjectDetail({ project, onBack }) {
           <p className="text-base font-bold text-zinc-900 dark:text-white truncate">{project.name}</p>
           {project.description && <p className="text-xs text-zinc-400 truncate">{project.description}</p>}
         </div>
-        <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${COLOR_LIGHT[project.color]}`}>
-          {project.status}
-        </span>
+        <div className="flex items-center gap-2">
+          <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${COLOR_LIGHT[project.color]}`}>
+            {project.status}
+          </span>
+          {project.status !== 'completed' && (
+            <MarkCompleteBtn projectId={project.id} />
+          )}
+        </div>
       </div>
 
       {/* Detail sub-tabs */}
@@ -2471,21 +2617,21 @@ function ProjectTasksTab({ projectId, color }) {
   const [addModal,  setAddModal]  = useState(false)
   const [detail,    setDetail]    = useState(null)
   const [editMode,  setEditMode]  = useState(false)
-  const [form,      setForm]      = useState({ text: '', priority: 'med', dueDate: '' })
-  const [editForm,  setEditForm]  = useState({ text: '', priority: 'med', dueDate: '' })
+  const [form,      setForm]      = useState({ text: '', priority: 'med', dueDate: '', notes: '' })
+  const [editForm,  setEditForm]  = useState({ text: '', priority: 'med', dueDate: '', notes: '' })
 
   const items = projectTasks.filter((t) => t.projectId === projectId)
   const isOverdue = (t) => t.dueDate && t.status !== 'done' && isBefore(startOfDay(parseISO(t.dueDate)), startOfDay(new Date()))
 
   const openDetail = (t) => {
     setDetail(t)
-    setEditForm({ text: t.text, priority: t.priority, dueDate: t.dueDate || '' })
+    setEditForm({ text: t.text, priority: t.priority, dueDate: t.dueDate || '', notes: t.notes || '' })
     setEditMode(false)
   }
 
   const saveEdit = () => {
     if (!editForm.text.trim()) return
-    updateProjectTask(detail.id, { text: editForm.text.trim(), priority: editForm.priority, dueDate: editForm.dueDate })
+    updateProjectTask(detail.id, { text: editForm.text.trim(), priority: editForm.priority, dueDate: editForm.dueDate, notes: editForm.notes })
     setDetail((d) => ({ ...d, ...editForm, text: editForm.text.trim() }))
     setEditMode(false)
   }
@@ -2503,16 +2649,29 @@ function ProjectTasksTab({ projectId, color }) {
             {col.length === 0
               ? <div className="bg-zinc-50 dark:bg-zinc-800/30 rounded-2xl py-4 text-center text-xs text-zinc-400 dark:text-zinc-600">Empty</div>
               : col.map((t) => (
-                <Card key={t.id} className="p-4 mb-2 cursor-pointer active:scale-[0.98] transition-transform" onClick={() => openDetail(t)}>
-                  <div className="flex items-start gap-2">
-                    <div className="flex-1">
-                      <p className={`text-sm font-medium leading-snug ${t.status === 'done' ? 'line-through text-zinc-400' : 'text-zinc-800 dark:text-zinc-100'}`}>{t.text}</p>
+                <Card key={t.id} className="p-4 mb-2 active:scale-[0.98] transition-transform">
+                  <div className="flex items-start gap-3">
+                    {/* Quick complete button */}
+                    <button
+                      onClick={(e) => { e.stopPropagation(); moveProjectTask(t.id, t.status === 'done' ? 'todo' : 'done') }}
+                      style={{
+                        width: 20, height: 20, borderRadius: 6, flexShrink: 0, border: '2px solid',
+                        borderColor: t.status === 'done' ? 'var(--success)' : 'var(--border)',
+                        background: t.status === 'done' ? 'var(--success)' : 'transparent',
+                        cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 1,
+                      }}
+                    >
+                      {t.status === 'done' && <Check size={11} style={{ color: '#fff' }} strokeWidth={3} />}
+                    </button>
+                    <div className="flex-1 cursor-pointer" onClick={() => openDetail(t)}>
+                      <p style={{ fontSize: 13, fontWeight: 500, color: t.status === 'done' ? 'var(--text-3)' : 'var(--text)', textDecoration: t.status === 'done' ? 'line-through' : 'none', lineHeight: 1.4 }}>{t.text}</p>
+                      {t.notes && <p style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.notes}</p>}
                       <div className="flex flex-wrap gap-1.5 mt-2">
                         <Badge color={PRIORITY_COLOR[t.priority]}>{PRIORITY_LABEL[t.priority]}</Badge>
                         {t.dueDate && <Badge color={isOverdue(t) ? 'red' : 'zinc'}>{isOverdue(t) ? '⚠ ' : ''}{format(parseISO(t.dueDate), 'MMM d')}</Badge>}
                       </div>
                     </div>
-                    <ChevronRight size={15} className="text-zinc-300 dark:text-zinc-600 mt-0.5 shrink-0" />
+                    <ChevronRight size={15} style={{ color: 'var(--text-3)', marginTop: 2, flexShrink: 0 }} onClick={() => openDetail(t)} />
                   </div>
                 </Card>
               ))
@@ -2530,13 +2689,14 @@ function ProjectTasksTab({ projectId, color }) {
             <option value="low">Low</option>
           </Select>
           <Input label="Due date (optional)" type="date" value={form.dueDate} onChange={(e) => setForm({ ...form, dueDate: e.target.value })} />
+          <Input label="Notes (optional)" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Additional details..." />
           <Btn
             size="lg"
             disabled={!form.text.trim()}
             onClick={() => {
               if (form.text.trim()) {
-                addProjectTask({ projectId, ...form, text: form.text.trim() })
-                setForm({ text: '', priority: 'med', dueDate: '' })
+                addProjectTask({ projectId, ...form, text: form.text.trim(), notes: form.notes })
+                setForm({ text: '', priority: 'med', dueDate: '', notes: '' })
                 setAddModal(false)
               }
             }}
@@ -2553,6 +2713,12 @@ function ProjectTasksTab({ projectId, color }) {
               <Badge color={PRIORITY_COLOR[detail.priority]}>{PRIORITY_LABEL[detail.priority]} priority</Badge>
               {detail.dueDate && <Badge color="zinc">Due {format(parseISO(detail.dueDate), 'MMM d, yyyy')}</Badge>}
             </div>
+            {detail.notes && (
+              <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '12px 14px' }}>
+                <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Notes</p>
+                <p style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{detail.notes}</p>
+              </div>
+            )}
             <div>
               <p className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">Move to</p>
               <div className="grid grid-cols-3 gap-2">
@@ -2582,6 +2748,16 @@ function ProjectTasksTab({ projectId, color }) {
               <option value="low">Low</option>
             </Select>
             <Input label="Due date" type="date" value={editForm.dueDate} onChange={(e) => setEditForm({ ...editForm, dueDate: e.target.value })} />
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">Notes</label>
+              <textarea
+                value={editForm.notes}
+                onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
+                placeholder="Additional details..."
+                rows={2}
+                style={{ background: 'var(--surface-3, var(--surface))', color: 'var(--text)', border: '1px solid var(--border)', borderRadius: 12, padding: '10px 14px', fontSize: 13, outline: 'none', resize: 'none', width: '100%' }}
+              />
+            </div>
             <Btn size="lg" onClick={saveEdit} disabled={!editForm.text.trim()}>Save Changes</Btn>
             <Btn variant="ghost" size="lg" onClick={() => setEditMode(false)}>Cancel</Btn>
           </div>
@@ -2762,12 +2938,35 @@ function FAB() {
 
 // ─── Main export ──────────────────────────────────────────────────────────────
 export default function Tasks() {
-  const [tab, setTab] = useState('today')
+  const [mode, setMode] = useState('plan')
+  const [tab,  setTab]  = useState('today')
+
+  const handleMode = (m) => {
+    setMode(m)
+    setTab(m === 'plan' ? 'today' : 'office')
+  }
 
   return (
     <div className="space-y-4 min-w-0">
-      <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">Tasks</h1>
-      <PillTabBar tabs={TOP_TABS} active={tab} onChange={setTab} />
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <h1 style={{ fontSize: 24, fontWeight: 800, color: 'var(--text)' }}>Tasks</h1>
+        {/* Plan / Work segment selector */}
+        <div style={{ display: 'flex', background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 12, padding: 3, gap: 3 }}>
+          {[['plan','Plan'],['work','Work']].map(([m,l]) => (
+            <button key={m} onClick={() => handleMode(m)}
+              style={{
+                fontSize: 12, fontWeight: 700, padding: '5px 14px', borderRadius: 9, border: 'none', cursor: 'pointer',
+                background: mode === m ? 'var(--accent)' : 'transparent',
+                color: mode === m ? '#fff' : 'var(--text-2)',
+                transition: 'all 0.15s',
+              }}>
+              {l}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <PillTabBar tabs={mode === 'plan' ? PLAN_TABS : WORK_TABS} active={tab} onChange={setTab} />
 
       {tab === 'today'    && <TodayTab />}
       {tab === 'upcoming' && <UpcomingTab />}

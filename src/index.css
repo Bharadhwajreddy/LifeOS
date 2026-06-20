@@ -52,3 +52,16 @@ body {
 .pb-safe {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
+
+/* ── Desktop layout (≥1024px) ───────────────────────────────── */
+@media (min-width: 1024px) {
+  .lf-sidebar     { display: flex !important; }
+  .lf-bottom-nav  { display: none  !important; }
+
+  .lf-main {
+    margin-left:  220px  !important;
+    margin-right: auto   !important;
+    max-width:    860px  !important;
+    padding:      2rem 2.5rem 2rem 2.5rem !important;
+  }
+}

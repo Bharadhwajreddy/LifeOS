@@ -68,8 +68,8 @@ export const useStore = create(
       // Accepts a full task object OR a plain string for backwards compatibility
       addDailyTask: (task) => set((s) => {
         const obj = typeof task === 'string'
-          ? { text: task, date: today(), priority: 'med', notes: '', dueTime: '' }
-          : { text: task.text, date: task.date || today(), priority: task.priority || 'med', notes: task.notes || '', dueTime: task.dueTime || '' }
+          ? { text: task, date: today(), priority: 'med', notes: '', dueTime: '', checklist: [] }
+          : { text: task.text, date: task.date || today(), priority: task.priority || 'med', notes: task.notes || '', dueTime: task.dueTime || '', checklist: task.checklist || [] }
         return { dailyTasks: [...s.dailyTasks, { id: crypto.randomUUID(), done: false, createdAt: today(), ...obj }] }
       }),
       // Accepts a patch object OR a plain string (text-only patch) for backwards compatibility
@@ -231,7 +231,7 @@ export const useStore = create(
       transactions: SEED_TRANSACTIONS,
       budgets: {},
       addTransaction: (tx) => set((s) => ({
-        transactions: [...s.transactions, { id: crypto.randomUUID(), date: today(), ...tx }],
+        transactions: [...s.transactions, { id: crypto.randomUUID(), date: today(), createdAt: Date.now(), ...tx }],
       })),
       deleteTransaction: (id) => set((s) => ({
         transactions: s.transactions.filter((t) => t.id !== id),

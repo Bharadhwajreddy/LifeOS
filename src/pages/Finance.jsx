@@ -103,13 +103,13 @@ function DonutChart({ slices, total, currency }) {
   const cy     = size / 2
 
   // Build cumulative offset per slice
-  let cumulative = 0
+  let cumulativePct = 0
   const segments = slices.map((s, i) => {
-    const pct  = total > 0 ? s.amount / total : 0
-    const dash = pct * circ
-    const gap  = circ - dash
-    const offset = -cumulative * circ      // negative because we rotate -90deg via transform
-    cumulative += pct
+    const pct    = total > 0 ? s.amount / total : 0
+    const dash   = pct * circ
+    const gap    = circ - dash
+    const offset = cumulativePct * circ  // how far around the circle this slice starts
+    cumulativePct += pct
     return { ...s, dash, gap, offset, color: DONUT_COLORS[i % DONUT_COLORS.length] }
   })
 
@@ -134,7 +134,7 @@ function DonutChart({ slices, total, currency }) {
               strokeWidth={stroke}
               strokeLinecap="butt"
               strokeDasharray={`${seg.dash} ${seg.gap}`}
-              strokeDashoffset={-cumulative * circ + seg.offset + seg.dash}
+              strokeDashoffset={-seg.offset}
               initial={{ strokeDasharray: `0 ${circ}` }}
               animate={{ strokeDasharray: `${seg.dash} ${seg.gap}` }}
               transition={{ duration: 0.7, ease: 'easeOut', delay: 0.2 + i * 0.12 }}
@@ -177,44 +177,53 @@ function DonutChart({ slices, total, currency }) {
 }
 
 // ─── Income vs Expense Bar ────────────────────────────────────────────────────
-function IncomeExpenseBar({ income, expenses }) {
+function IncomeExpenseBar({ income, expenses, currency }) {
+  const max    = Math.max(income, expenses, 1)
   const total  = income + expenses
-  const incPct = total > 0 ? (income / total) * 100 : 50
-  const expPct = total > 0 ? (expenses / total) * 100 : 50
+  const incPct = total > 0 ? Math.round((income / total) * 100) : 50
+  const expPct = total > 0 ? Math.round((expenses / total) * 100) : 50
+  const saved  = income - expenses
 
   return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-        <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--success)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-          Income
-        </span>
-        <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--danger)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-          Expense
-        </span>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      {/* Income row */}
+      <div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+            <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--success)', flexShrink: 0 }} />
+            <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-2)' }}>Income</span>
+            <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--success)', background: 'rgba(52,211,153,0.12)', borderRadius: 6, padding: '1px 6px' }}>{incPct}%</span>
+          </div>
+          <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--success)' }}>{currency}{income.toFixed(0)}</span>
+        </div>
+        <div style={{ height: 8, borderRadius: 9999, background: 'rgba(128,128,128,0.12)', overflow: 'hidden' }}>
+          <motion.div style={{ height: '100%', borderRadius: 9999, background: 'var(--success)' }}
+            initial={{ width: 0 }} animate={{ width: `${(income / max) * 100}%` }}
+            transition={{ duration: 0.9, ease: 'easeOut', delay: 0.1 }} />
+        </div>
       </div>
-      <div style={{
-        height: 10,
-        borderRadius: 9999,
-        overflow: 'hidden',
-        background: 'rgba(128,128,128,0.12)',
-        display: 'flex',
-      }}>
-        <motion.div
-          style={{ height: '100%', background: 'var(--success)', borderRadius: '9999px 0 0 9999px' }}
-          initial={{ width: 0 }}
-          animate={{ width: `${incPct}%` }}
-          transition={{ duration: 0.9, ease: 'easeOut', delay: 0.2 }}
-        />
-        <motion.div
-          style={{ height: '100%', background: 'var(--danger)', borderRadius: '0 9999px 9999px 0', marginLeft: 'auto' }}
-          initial={{ width: 0 }}
-          animate={{ width: `${expPct}%` }}
-          transition={{ duration: 0.9, ease: 'easeOut', delay: 0.2 }}
-        />
+      {/* Expense row */}
+      <div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+            <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--danger)', flexShrink: 0 }} />
+            <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-2)' }}>Expenses</span>
+            <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--danger)', background: 'rgba(248,113,113,0.12)', borderRadius: 6, padding: '1px 6px' }}>{expPct}%</span>
+          </div>
+          <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--danger)' }}>{currency}{expenses.toFixed(0)}</span>
+        </div>
+        <div style={{ height: 8, borderRadius: 9999, background: 'rgba(128,128,128,0.12)', overflow: 'hidden' }}>
+          <motion.div style={{ height: '100%', borderRadius: 9999, background: 'var(--danger)' }}
+            initial={{ width: 0 }} animate={{ width: `${(expenses / max) * 100}%` }}
+            transition={{ duration: 0.9, ease: 'easeOut', delay: 0.2 }} />
+        </div>
       </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
-        <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--success)' }}>{Math.round(incPct)}%</span>
-        <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--danger)' }}>{Math.round(expPct)}%</span>
+      {/* Savings line */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 4, borderTop: '1px solid var(--border)' }}>
+        <span style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 600 }}>Net Savings</span>
+        <span style={{ fontSize: 14, fontWeight: 800, color: saved >= 0 ? 'var(--success)' : 'var(--danger)' }}>
+          {saved >= 0 ? '+' : ''}{currency}{saved.toFixed(0)}
+        </span>
       </div>
     </div>
   )
@@ -302,7 +311,7 @@ function OverviewTab({ month, months, setMonth }) {
           <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-2)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>
             Income vs Expense
           </p>
-          <IncomeExpenseBar income={income} expenses={expenses} />
+          <IncomeExpenseBar income={income} expenses={expenses} currency={currency} />
         </Card>
       )}
 
@@ -454,7 +463,6 @@ function AddTab() {
         <option value="">Select category...</option>
         {categories.map((c) => <option key={c} value={c}>{c}</option>)}
       </Select>
-      <Input label="Date" type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} />
       <Input label="Note (optional)" value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} placeholder="e.g. Lidl run, May rent..." />
 
       <Btn size="lg" variant={success ? 'success' : 'primary'} onClick={submit} disabled={!form.amount || !form.category}>
@@ -469,7 +477,8 @@ function HistoryTab({ month, months, setMonth }) {
   const { transactions, deleteTransaction, currency } = useStore()
   const [confirmId, setConfirmId] = useState(null)
 
-  const mTx = transactions
+  const mTx = [...transactions]
+    .reverse()
     .filter((t) => t.date.startsWith(month))
     .sort((a, b) => b.date.localeCompare(a.date))
 
