@@ -98,7 +98,7 @@ export default function BottomNav() {
       </nav>
 
       {/* ── Desktop sidebar ── */}
-      <nav className="lf-sidebar hidden fixed left-0 top-0 bottom-0 z-50 flex-col"
+      <nav className="lf-sidebar fixed left-0 top-0 bottom-0 z-50 flex-col"
         style={{
           width: 220,
           background: 'var(--nav-bg)',
