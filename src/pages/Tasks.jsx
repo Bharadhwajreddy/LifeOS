@@ -2443,11 +2443,11 @@ function ProjectsList({ onOpen }) {
   const { projects, addProject, deleteProject, updateProject, projectTasks } = useStore()
   const [modal,     setModal]     = useState(false)
   const [editModal, setEditModal] = useState(null)
-  const [form, setForm] = useState({ name: '', description: '', emoji: '🚀', color: 'blue', status: 'active' })
+  const [form, setForm] = useState({ name: '', description: '', emoji: '🚀', color: 'blue', status: 'active', checklist: [] })
 
   const openEdit = (p) => {
     setEditModal(p)
-    setForm({ name: p.name, description: p.description || '', emoji: p.emoji, color: p.color, status: p.status })
+    setForm({ name: p.name, description: p.description || '', emoji: p.emoji, color: p.color, status: p.status, checklist: p.checklist || [] })
   }
 
   const statuses = ['active','paused','completed']
@@ -2457,7 +2457,7 @@ function ProjectsList({ onOpen }) {
       <Btn
         size="lg"
         onClick={() => {
-          setForm({ name: '', description: '', emoji: '🚀', color: 'blue', status: 'active' })
+          setForm({ name: '', description: '', emoji: '🚀', color: 'blue', status: 'active', checklist: [] })
           setModal(true)
         }}
       >
@@ -2572,6 +2572,7 @@ function ProjectForm({ form, setForm, onSave, saveLabel = 'Create Project', show
         onChange={(e) => setForm({ ...form, description: e.target.value })}
         placeholder="What is this project about?"
       />
+      <ChecklistEditor items={form.checklist} onChange={(checklist) => setForm({ ...form, checklist })} />
       <div>
         <p className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">Emoji</p>
         <div className="flex flex-wrap gap-2">
@@ -2644,6 +2645,12 @@ const DETAIL_TABS = [
 
 function ProjectDetail({ project, onBack }) {
   const [tab, setTab] = useState('tasks')
+  const updateProject = useStore((s) => s.updateProject)
+
+  const toggleChecklistItem = (itemId) => {
+    const newChecklist = (project.checklist || []).map((c) => c.id === itemId ? { ...c, done: !c.done } : c)
+    updateProject(project.id, { checklist: newChecklist })
+  }
 
   return (
     <div className="space-y-4">
@@ -2671,6 +2678,9 @@ function ProjectDetail({ project, onBack }) {
           )}
         </div>
       </div>
+
+      {/* Project-level checklist — shows whenever the project is opened */}
+      <ChecklistDisplay items={project.checklist} onToggle={toggleChecklistItem} />
 
       {/* Detail sub-tabs */}
       <div className="flex bg-zinc-100 dark:bg-zinc-800/80 rounded-2xl p-1 gap-1">
