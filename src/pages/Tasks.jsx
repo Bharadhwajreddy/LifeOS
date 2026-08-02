@@ -2428,7 +2428,13 @@ function KanbanTab({ category }) {
 }
 
 // ─── PROJECTS TAB ─────────────────────────────────────────────────────────────
-function ProjectsTab() {
+// Label config so the same folder system reads correctly in both tabs.
+const FOLDER_LABELS = {
+  project: { create: 'Create Project', newTitle: 'New Project', editTitle: 'Edit Project', empty: 'Create a project to get started', save: 'Create Project', deleteBtn: 'Delete Project', singular: 'Project' },
+  office:  { create: 'Create Folder',  newTitle: 'New Folder',  editTitle: 'Edit Folder',  empty: 'Create a folder to get started',  save: 'Create Folder',  deleteBtn: 'Delete Folder',  singular: 'Folder'  },
+}
+
+function ProjectsTab({ scope = 'project' }) {
   const [view, setView] = useState(null)
   const { projects } = useStore()
   const currentProject = projects.find((p) => p.id === view)
@@ -2436,11 +2442,13 @@ function ProjectsTab() {
   if (view && currentProject) {
     return <ProjectDetail project={currentProject} onBack={() => setView(null)} />
   }
-  return <ProjectsList onOpen={(id) => setView(id)} />
+  return <ProjectsList onOpen={(id) => setView(id)} scope={scope} />
 }
 
-function ProjectsList({ onOpen }) {
+function ProjectsList({ onOpen, scope = 'project' }) {
   const { projects, addProject, deleteProject, updateProject, projectTasks } = useStore()
+  const labels = FOLDER_LABELS[scope] || FOLDER_LABELS.project
+  const scoped = projects.filter((p) => (p.scope || 'project') === scope)
   const [modal,     setModal]     = useState(false)
   const [editModal, setEditModal] = useState(null)
   const [form, setForm] = useState({ name: '', description: '', emoji: '🚀', color: 'blue', status: 'active', checklist: [] })
@@ -2461,13 +2469,13 @@ function ProjectsList({ onOpen }) {
           setModal(true)
         }}
       >
-        <FolderOpen size={18} /> Create Project
+        <FolderOpen size={18} /> {labels.create}
       </Btn>
 
-      {projects.length === 0 && <EmptyState icon={FolderOpen} text="Create a project to get started" />}
+      {scoped.length === 0 && <EmptyState icon={FolderOpen} text={labels.empty} />}
 
       {statuses.map((status) => {
-        const group = projects.filter((p) => p.status === status)
+        const group = scoped.filter((p) => p.status === status)
         if (!group.length) return null
         return (
           <div key={status}>
@@ -2518,21 +2526,23 @@ function ProjectsList({ onOpen }) {
         )
       })}
 
-      <Modal open={modal} onClose={() => setModal(false)} title="New Project">
+      <Modal open={modal} onClose={() => setModal(false)} title={labels.newTitle}>
         <ProjectForm
           form={form}
           setForm={setForm}
           showStatus={false}
+          saveLabel={labels.save}
+          singular={labels.singular}
           onSave={() => {
             if (form.name.trim()) {
-              addProject({ ...form, name: form.name.trim() })
+              addProject({ ...form, name: form.name.trim(), scope })
               setModal(false)
             }
           }}
         />
       </Modal>
 
-      <Modal open={!!editModal} onClose={() => setEditModal(null)} title="Edit Project">
+      <Modal open={!!editModal} onClose={() => setEditModal(null)} title={labels.editTitle}>
         {editModal && (
           <div className="space-y-4">
             <ProjectForm
@@ -2540,6 +2550,7 @@ function ProjectsList({ onOpen }) {
               setForm={setForm}
               showStatus
               saveLabel="Save Changes"
+              singular={labels.singular}
               onSave={() => {
                 if (form.name.trim()) {
                   updateProject(editModal.id, { ...form, name: form.name.trim() })
@@ -2548,7 +2559,7 @@ function ProjectsList({ onOpen }) {
               }}
             />
             <Btn variant="danger" size="lg" onClick={() => { deleteProject(editModal.id); setEditModal(null) }}>
-              <Trash2 size={15} /> Delete Project
+              <Trash2 size={15} /> {labels.deleteBtn}
             </Btn>
           </div>
         )}
@@ -2557,14 +2568,14 @@ function ProjectsList({ onOpen }) {
   )
 }
 
-function ProjectForm({ form, setForm, onSave, saveLabel = 'Create Project', showStatus = false }) {
+function ProjectForm({ form, setForm, onSave, saveLabel = 'Create Project', showStatus = false, singular = 'Project' }) {
   return (
     <div className="space-y-4">
       <Input
-        label="Project name"
+        label={`${singular} name`}
         value={form.name}
         onChange={(e) => setForm({ ...form, name: e.target.value })}
-        placeholder="e.g. Githa App, Ecogenium"
+        placeholder={singular === 'Folder' ? 'e.g. Work, Errands, Admin' : 'e.g. Githa App, Ecogenium'}
       />
       <Input
         label="Description (optional)"
@@ -3044,6 +3055,10 @@ function FAB() {
 export default function Tasks() {
   const [mode, setMode] = useState('plan')
   const [tab,  setTab]  = useState('today')
+  const migrateOfficeFolders = useStore((s) => s.migrateOfficeFolders)
+
+  // One-time: move any legacy flat Office tasks into a "General" folder.
+  useEffect(() => { migrateOfficeFolders() }, [migrateOfficeFolders])
 
   const handleMode = (m) => {
     setMode(m)
@@ -3076,8 +3091,8 @@ export default function Tasks() {
       {tab === 'upcoming' && <UpcomingTab />}
       {tab === 'calendar' && <CalendarTab />}
       {tab === 'habits'   && <HabitsTab />}
-      {tab === 'office'   && <KanbanTab category="office" />}
-      {tab === 'projects' && <ProjectsTab />}
+      {tab === 'office'   && <ProjectsTab scope="office" />}
+      {tab === 'projects' && <ProjectsTab scope="project" />}
 
       <FAB />
     </div>

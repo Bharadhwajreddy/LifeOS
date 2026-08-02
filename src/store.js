@@ -135,6 +135,37 @@ export const useStore = create(
         tasks: s.tasks.map((t) => t.id === id ? { ...t, status } : t),
       })),
 
+      // ── Office folders migration ───────────────────────────────────────────────
+      // Office used to be a single flat board (the `tasks` array). It's now
+      // folder-based like Projects. This one-time migration moves any existing
+      // office tasks into a "General" folder so nothing is lost.
+      officeFoldersMigrated: false,
+      migrateOfficeFolders: () => set((s) => {
+        if (s.officeFoldersMigrated) return s
+        const legacy = s.tasks.filter((t) => (t.category || 'office') === 'office')
+        if (legacy.length === 0) return { officeFoldersMigrated: true }
+        const folderId = crypto.randomUUID()
+        const folder = {
+          id: folderId, name: 'General', description: '', emoji: '💼',
+          color: 'blue', status: 'active', scope: 'office', checklist: [], createdAt: today(),
+        }
+        const migrated = legacy.map((t) => ({
+          id: crypto.randomUUID(),
+          projectId: folderId,
+          text: t.text,
+          priority: t.priority || 'med',
+          status: t.status || 'todo',
+          dueDate: t.dueDate || t.date || '',
+          notes: t.notes || '',
+          checklist: t.checklist || [],
+        }))
+        return {
+          officeFoldersMigrated: true,
+          projects: [...s.projects, folder],
+          projectTasks: [...s.projectTasks, ...migrated],
+        }
+      }),
+
       // ── Habits ───────────────────────────────────────────────────────────────
       habits: [],
       habitLogs: [],
