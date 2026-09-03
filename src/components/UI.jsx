@@ -1,7 +1,8 @@
 // Card
-export function Card({ children, className = '' }) {
+export function Card({ children, className = '', onClick, style = {} }) {
   return (
     <div
+      onClick={onClick}
       style={{
         background: 'var(--surface)',
         border: '1px solid var(--card-border)',
@@ -9,6 +10,7 @@ export function Card({ children, className = '' }) {
         boxShadow: 'var(--shadow-sm)',
         backdropFilter: 'var(--backdrop)',
         WebkitBackdropFilter: 'var(--backdrop)',
+        ...style,
       }}
       className={className}
     >

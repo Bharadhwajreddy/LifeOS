@@ -2493,20 +2493,20 @@ function ProjectsList({ onOpen, scope = 'project' }) {
                       <span className="text-xl">{p.emoji}</span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-zinc-900 dark:text-white">{p.name}</p>
-                      {p.description && <p className="text-xs text-zinc-400 mt-0.5 truncate">{p.description}</p>}
+                      <p className="text-sm font-bold" style={{ color: 'var(--text)' }}>{p.name}</p>
+                      {p.description && <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--text-3)' }}>{p.description}</p>}
                       {total > 0 && (
                         <div className="mt-2">
                           <div className="flex justify-between mb-1">
-                            <span className="text-[10px] text-zinc-400">{done}/{total} tasks</span>
-                            <span className="text-[10px] font-bold text-zinc-500">{pct}%</span>
+                            <span className="text-[10px]" style={{ color: 'var(--text-3)' }}>{done}/{total} tasks</span>
+                            <span className="text-[10px] font-bold" style={{ color: 'var(--text-2)' }}>{pct}%</span>
                           </div>
-                          <div className="h-1 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+                          <div className="h-1 rounded-full overflow-hidden" style={{ background: 'var(--border)' }}>
                             <div className={`h-full ${COLOR_BG[p.color]} rounded-full transition-all`} style={{ width: `${pct}%` }} />
                           </div>
                         </div>
                       )}
-                      {total === 0 && <p className="text-xs text-zinc-400 mt-1">No tasks yet</p>}
+                      {total === 0 && <p className="text-xs mt-1" style={{ color: 'var(--text-3)' }}>No tasks yet</p>}
                     </div>
                     <div className="flex gap-1 shrink-0">
                       <button
@@ -2669,7 +2669,8 @@ function ProjectDetail({ project, onBack }) {
         <button
           onClick={onBack}
           aria-label="Back to projects"
-          className="p-2 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 focus:outline-none focus:ring-2 focus:ring-blue-500/70"
+          className="p-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/70"
+          style={{ background: 'var(--surface)', color: 'var(--text-2)' }}
         >
           <ArrowLeft size={18} />
         </button>
@@ -2677,8 +2678,8 @@ function ProjectDetail({ project, onBack }) {
           <span className="text-xl">{project.emoji}</span>
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-base font-bold text-zinc-900 dark:text-white truncate">{project.name}</p>
-          {project.description && <p className="text-xs text-zinc-400 truncate">{project.description}</p>}
+          <p className="text-base font-bold truncate" style={{ color: 'var(--text)' }}>{project.name}</p>
+          {project.description && <p className="text-xs truncate" style={{ color: 'var(--text-3)' }}>{project.description}</p>}
         </div>
         <div className="flex items-center gap-2">
           <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${COLOR_LIGHT[project.color]}`}>
