@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { onAuthStateChanged } from 'firebase/auth'
 import { auth } from './lib/firebase'
-import { loadFromCloud, saveToCloud } from './lib/firestoreSync'
+import { subscribeToCloud, saveToCloud } from './lib/firestoreSync'
 import { useStore } from './store'
 import BottomNav from './components/BottomNav'
 import Home from './pages/Home'
@@ -35,36 +35,69 @@ function AppInner() {
   const { theme, pendingAchievement, dismissAchievement, userId, isOnboarded, setUser, clearUser } = useStore()
   const [authReady, setAuthReady] = useState(!auth) // if no firebase, skip auth gate
 
-  // Firebase auth state listener
+  // Refs to coordinate cloud sync safely:
+  //  - hydratedRef: true once we've received the first cloud snapshot. We must
+  //    NOT save to cloud before this, or a device opening with stale local data
+  //    would overwrite fresher cloud data (the cross-device bug).
+  //  - applyingRemoteRef: set while we apply a remote snapshot, so the store
+  //    subscription doesn't immediately echo that same data back to the cloud.
+  const hydratedRef = useRef(false)
+  const applyingRemoteRef = useRef(false)
+  const saveTimer = useRef(null)
+
+  // Firebase auth + real-time cloud subscription
   useEffect(() => {
     if (!auth) return
-    const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
+    let unsubSnap = null
+    const unsub = onAuthStateChanged(auth, (firebaseUser) => {
+      if (unsubSnap) { unsubSnap(); unsubSnap = null }
+      hydratedRef.current = false
+
       if (firebaseUser) {
         setUser(firebaseUser)
-        // Load cloud data for this user
-        const cloudData = await loadFromCloud(firebaseUser.uid)
-        if (cloudData) {
-          // Merge cloud data into store (cloud wins for most fields)
-          // eslint-disable-next-line no-unused-vars
-          const { setUser: _su, clearUser: _cu, setIsOnboarded: _si, ...mergeable } = cloudData
-          useStore.setState((s) => ({ ...s, ...mergeable }))
-        }
+        // Live listener: fires now with current cloud doc, then on every change.
+        unsubSnap = subscribeToCloud(
+          firebaseUser.uid,
+          (cloudData) => {
+            if (cloudData) {
+              applyingRemoteRef.current = true
+              // eslint-disable-next-line no-unused-vars
+              const { setUser: _su, clearUser: _cu, setIsOnboarded: _si, ...mergeable } = cloudData
+              useStore.setState((s) => ({ ...s, ...mergeable }))
+            }
+            hydratedRef.current = true
+            setAuthReady(true)
+          },
+          () => {
+            // Offline / rules error — fall back to local data so we don't hang.
+            hydratedRef.current = true
+            setAuthReady(true)
+          }
+        )
+        // Safety: never hang on the spinner if the network is slow.
+        setTimeout(() => setAuthReady(true), 5000)
       } else {
         clearUser()
+        setAuthReady(true)
       }
-      setAuthReady(true)
     })
-    return unsub
+    return () => { if (unsubSnap) unsubSnap(); unsub() }
   }, [])
 
-  // Sync to cloud whenever store changes (3s debounce)
+  // Save local changes to cloud (debounced), but only after cloud hydration and
+  // never for changes that were themselves applied from a remote snapshot.
   useEffect(() => {
-    if (!userId) return
-    const t = setTimeout(() => {
-      saveToCloud(userId, useStore.getState())
-    }, 3000)
-    return () => clearTimeout(t)
-  })
+    if (!auth) return
+    const unsub = useStore.subscribe((state) => {
+      if (!state.userId || !hydratedRef.current) return
+      if (applyingRemoteRef.current) { applyingRemoteRef.current = false; return }
+      clearTimeout(saveTimer.current)
+      saveTimer.current = setTimeout(() => {
+        saveToCloud(state.userId, useStore.getState())
+      }, 1500)
+    })
+    return () => { clearTimeout(saveTimer.current); unsub() }
+  }, [])
 
   // Theme effect
   useEffect(() => {
